@@ -12,7 +12,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # VERCEL DOMENINGIZNI SHU YERGA YOZING (oxirida / bo'lmasin)
-WEBAPP_URL = "https://kelajak-bot-frontend.vercel.app/webapp"
+WEBAPP_URL = "https://kelajak-bot-frontend.vercel.app/webapp?v=2"
 
 app = FastAPI()
 
