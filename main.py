@@ -5,19 +5,17 @@ from fastapi import FastAPI, Request, Depends
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 
-# Bazaga ulanish va modellar
 import models
 from database import engine, get_db
 from routers import users, admin, assessment, results
 
-# Jadvallarni avtomatik yaratish (agar yo'q bo'lsa)
 models.Base.metadata.create_all(bind=engine)
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # DIQQAT: Frontend loyihangiz manzili
-WEBAPP_URL = "https://kelajak-bot-frontend.vercel.app?v=1"
+WEBAPP_URL = "https://kelajak-bot-frontend.vercel.app"
 
 app = FastAPI()
 
@@ -26,9 +24,6 @@ app.include_router(admin.router)
 app.include_router(assessment.router)
 app.include_router(results.router)
 
-# ==========================================
-# ⚡️ YORDAMCHI FUNKSIYA: Telegramga asinxron xabar yuborish
-# ==========================================
 async def send_telegram_message(chat_id: int, text: str, reply_markup: dict = None):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {
@@ -42,9 +37,6 @@ async def send_telegram_message(chat_id: int, text: str, reply_markup: dict = No
     async with httpx.AsyncClient() as client:
         await client.post(url, json=payload)
 
-# ==========================================
-# 🤖 BACKEND: TELEGRAM WEBHOOK
-# ==========================================
 @app.post("/webhook")
 async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
@@ -53,19 +45,21 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         message = data["message"]
         chat_id = message["chat"]["id"]
         
-        # A) /start komandasi
+        # A) /start komandasi (TUGMA TURI O'ZGARTIRILDI ✅)
         if "text" in message and message["text"] == "/start":
+            # Endi bu Inline emas, pastki klaviatura o'rnida chiquvchi tugma
             keyboard = {
-                "inline_keyboard": [
+                "keyboard": [
                     [{"text": "🎯 Diagnostikani boshlash", "web_app": {"url": WEBAPP_URL}}]
-                ]
+                ],
+                "resize_keyboard": True
             }
             
             reply_text = (
                 "👋 <b>Assalomu alaykum!</b>\n\n"
                 "To'g'ri kasb tanlash va kelajagingizni qurish yo'lidagi "
                 "maxsus diagnostika tizimiga xush kelibsiz.\n\n"
-                "👇 <b>Pastdagi tugmani bosing va tahlilni boshlang:</b>"
+                "👇 <b>Pastdagi 'Diagnostikani boshlash' tugmasini bosing:</b>"
             )
             
             await send_telegram_message(chat_id, reply_text, keyboard)
@@ -73,7 +67,6 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         # B) Frontend'dan Diagnostika natijasi va Raqam kelganda
         elif "web_app_data" in message:
             try:
-                # 1. Frontenddan kelgan JSON ma'lumotni o'qib olish
                 web_app_data_str = message["web_app_data"]["data"]
                 parsed_data = json.loads(web_app_data_str)
                 
@@ -81,7 +74,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 phone_number = parsed_data.get("phone", "Noma'lum")
                 raw_answers = parsed_data.get("answers", {}) 
                 
-                # 2. Bazaga Yozish (PII - Shaxsiy ma'lumotlar)
+                # Shaxsiy ma'lumotlarni saqlash
                 user = db.query(models.User).filter(models.User.telegram_id == str(chat_id)).first()
                 if not user:
                     user = models.User(telegram_id=str(chat_id), full_name=full_name, phone_number=phone_number)
@@ -93,7 +86,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     user.phone_number = phone_number
                     db.commit()
                 
-                # 3. Bazaga Yozish (Analitika)
+                # Analitikani saqlash
                 survey_response = models.SurveyResponse(
                     user_id=user.id,
                     raw_answers=raw_answers
@@ -101,17 +94,16 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 db.add(survey_response)
                 db.commit()
                 
-                # 4. Mijozga xabar yuborish
                 success_text = (
                     f"✅ <b>Rahmat, {full_name}!</b>\n\n"
-                    f"Ma'lumotlaringiz va diagnostika natijalari bazaga saqlandi.\n"
-                    f"Tez orada mutaxassislarimiz siz bilan bog'lanib, sizga eng mos Yo'l Xaritasini taqdim etishadi!"
+                    f"Ma'lumotlaringiz va diagnostika natijalari bazaga xavfsiz saqlandi.\n"
+                    f"Tez orada sizga mos Yo'l Xaritasi taqdim etiladi!"
                 )
                 
                 await send_telegram_message(chat_id, success_text)
                 
             except Exception as e:
                 print("Xatolik yuz berdi:", e)
-                await send_telegram_message(chat_id, "Kechirasiz, ma'lumotlarni ishlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
+                await send_telegram_message(chat_id, "Kechirasiz, xatolik yuz berdi. Iltimos qayta urinib ko'ring.")
                 
     return {"status": "ok"}
