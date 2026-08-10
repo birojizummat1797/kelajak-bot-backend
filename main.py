@@ -17,7 +17,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # DIQQAT: Frontend loyihangiz manzili
-WEBAPP_URL = "https://SIZNING-FRONTEND-DOMENINGIZ.vercel.app"
+WEBAPP_URL = "https://kelajak-bot-frontend.vercel.app"
 
 app = FastAPI()
 
