@@ -1,38 +1,35 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, JSON
 from sqlalchemy.sql import func
 from database import Base
 
+# 1. SHAXSIY MA'LUMOTLAR JADVALI (PII - Personally Identifiable Information)
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
     telegram_id = Column(String, unique=True, index=True)
-    full_name = Column(String, nullable=True)     # <--- MANA SHU QATOR YETISHMAYOTGAN EDI
-    fitrat_type = Column(String, nullable=True)
-
-class Question(Base):
-    __tablename__ = "questions"
-    id = Column(Integer, primary_key=True, index=True)
-    text = Column(Text, nullable=False)
-    stage = Column(String) # Masalan: "global_filter", "tech_branch"
-
-# models.py faylining Answer qismi
-class Answer(Base):
-    __tablename__ = "answers"
-
-    id = Column(Integer, primary_key=True, index=True)
-    question_id = Column(Integer, ForeignKey("questions.id"))
-    text = Column(String)
-    next_question_id = Column(Integer, ForeignKey("questions.id"), nullable=True)
+    full_name = Column(String, nullable=True) 
+    phone_number = Column(String, nullable=True) # <-- Yig'ib olinadigan raqam
     
-    # MANA SHU YANGI QATORNI QO'SHAMIZ:
-    trait_score = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-class Result(Base):
-    __tablename__ = "results"
+
+# 2. DIAGNOSTIKA VA ANALITIKA JADVALI (Research Dataset)
+class SurveyResponse(Base):
+    __tablename__ = "survey_responses"
+
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    fitrat_type = Column(String)
-    top_professions = Column(Text)
-    recommendation = Column(Text)
+    user_id = Column(Integer, ForeignKey("users.id")) # users jadvaliga bog'lanadi
+    
+    # Ma'lumotlarni JSONB formatida saqlaymiz (Tezkor va moslashuvchan)
+    demographics = Column(JSON, nullable=True)      # Yosh, manzil, status
+    current_state = Column(JSON, nullable=True)     # Hozirgi holat, kasb, qoniqish
+    career_problem = Column(JSON, nullable=True)    # Noaniqlik, og'riqlar
+    current_solutions = Column(JSON, nullable=True) # Nimalardan foydalanadi
+    past_cost = Column(JSON, nullable=True)         # Yo'qotilgan vaqt va pul
+    product_signal = Column(JSON, nullable=True)    # To'lashga tayyorligi
+    
+    # Barcha original javoblarni (Frontenddan kelgan) bitta ob'ektda saqlash uchun
+    raw_answers = Column(JSON, nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
