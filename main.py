@@ -7,7 +7,8 @@ from dotenv import load_dotenv
 
 import models
 from database import engine, get_db
-from routers import users, admin, assessment, results
+# from routers import users, admin, assessment, results
+from routers import users, admin
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -21,8 +22,8 @@ app = FastAPI()
 
 app.include_router(users.router)
 app.include_router(admin.router)
-app.include_router(assessment.router)
-app.include_router(results.router)
+# app.include_router(assessment.router)
+# app.include_router(results.router)
 
 async def send_telegram_message(chat_id: int, text: str, reply_markup: dict = None):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
