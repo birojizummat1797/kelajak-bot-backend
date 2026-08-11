@@ -7,34 +7,25 @@ from dotenv import load_dotenv
 
 import models
 from database import engine, get_db
-# from routers import users, admin, assessment, results
-from routers import users, admin
 
-models.Base.metadata.create_all(bind=engine)
+# Faqat eng kerakli routerlar qoladi (eskilarini chaqirmaymiz!)
+from routers import users, admin
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+WEBAPP_URL = "https://https://kelajak-bot-frontend.vercel.app/" 
 
-# DIQQAT: Frontend loyihangiz manzili
-WEBAPP_URL = "https://kelajak-bot-frontend.vercel.app"
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
 app.include_router(users.router)
 app.include_router(admin.router)
-# app.include_router(assessment.router)
-# app.include_router(results.router)
 
-async def send_telegram_message(chat_id: int, text: str, reply_markup: dict = None):
+async def send_message(chat_id: int, text: str, reply_markup: dict = None):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": chat_id,
-        "text": text,
-        "parse_mode": "HTML"
-    }
+    payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
     if reply_markup:
         payload["reply_markup"] = reply_markup
-        
     async with httpx.AsyncClient() as client:
         await client.post(url, json=payload)
 
@@ -43,68 +34,46 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
     
     if "message" in data:
-        message = data["message"]
-        chat_id = message["chat"]["id"]
+        msg = data["message"]
+        chat_id = msg["chat"]["id"]
         
-        # A) /start komandasi (TUGMA TURI O'ZGARTIRILDI ✅)
-        if "text" in message and message["text"] == "/start":
-            # Endi bu Inline emas, pastki klaviatura o'rnida chiquvchi tugma
+        # 1. /start bosilganda
+        if "text" in msg and msg["text"] == "/start":
+            # DIQQAT: Bu pastki klaviatura tugmasi!
             keyboard = {
-                "keyboard": [
-                    [{"text": "🎯 Diagnostikani boshlash", "web_app": {"url": WEBAPP_URL}}]
-                ],
+                "keyboard": [[{"text": "🎯 Diagnostikani boshlash", "web_app": {"url": WEBAPP_URL}}]],
                 "resize_keyboard": True
             }
+            await send_message(chat_id, "👋 Assalomu alaykum!\nPastdagi tugmani bosib diagnostikani boshlang:", keyboard)
             
-            reply_text = (
-                "👋 <b>Assalomu alaykum!</b>\n\n"
-                "To'g'ri kasb tanlash va kelajagingizni qurish yo'lidagi "
-                "maxsus diagnostika tizimiga xush kelibsiz.\n\n"
-                "👇 <b>Pastdagi 'Diagnostikani boshlash' tugmasini bosing:</b>"
-            )
-            
-            await send_telegram_message(chat_id, reply_text, keyboard)
-            
-        # B) Frontend'dan Diagnostika natijasi va Raqam kelganda
-        elif "web_app_data" in message:
+        # 2. Frontend'dan ma'lumot kelganda
+        elif "web_app_data" in msg:
             try:
-                web_app_data_str = message["web_app_data"]["data"]
-                parsed_data = json.loads(web_app_data_str)
+                raw_data = msg["web_app_data"]["data"]
+                parsed = json.loads(raw_data)
                 
-                full_name = parsed_data.get("name", "Noma'lum")
-                phone_number = parsed_data.get("phone", "Noma'lum")
-                raw_answers = parsed_data.get("answers", {}) 
+                name = parsed.get("name", "Noma'lum")
+                phone = parsed.get("phone", "Noma'lum")
+                answers = parsed.get("answers", {})
                 
-                # Shaxsiy ma'lumotlarni saqlash
+                # Bazaga yozish
                 user = db.query(models.User).filter(models.User.telegram_id == str(chat_id)).first()
                 if not user:
-                    user = models.User(telegram_id=str(chat_id), full_name=full_name, phone_number=phone_number)
+                    user = models.User(telegram_id=str(chat_id), full_name=name, phone_number=phone)
                     db.add(user)
-                    db.commit()
-                    db.refresh(user)
                 else:
-                    user.full_name = full_name
-                    user.phone_number = phone_number
-                    db.commit()
+                    user.full_name = name
+                    user.phone_number = phone
+                db.commit()
+                db.refresh(user)
                 
-                # Analitikani saqlash
-                survey_response = models.SurveyResponse(
-                    user_id=user.id,
-                    raw_answers=raw_answers
-                )
-                db.add(survey_response)
+                survey = models.SurveyResponse(user_id=user.id, raw_answers=answers)
+                db.add(survey)
                 db.commit()
                 
-                success_text = (
-                    f"✅ <b>Rahmat, {full_name}!</b>\n\n"
-                    f"Ma'lumotlaringiz va diagnostika natijalari bazaga xavfsiz saqlandi.\n"
-                    f"Tez orada sizga mos Yo'l Xaritasi taqdim etiladi!"
-                )
-                
-                await send_telegram_message(chat_id, success_text)
-                
+                await send_message(chat_id, f"✅ Rahmat, {name}! Ma'lumotlaringiz xavfsiz saqlandi.")
             except Exception as e:
-                print("Xatolik yuz berdi:", e)
-                await send_telegram_message(chat_id, "Kechirasiz, xatolik yuz berdi. Iltimos qayta urinib ko'ring.")
+                print("Xatolik:", e)
+                await send_message(chat_id, "Kechirasiz, xatolik yuz berdi.")
                 
     return {"status": "ok"}
