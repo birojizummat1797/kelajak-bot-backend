@@ -10,7 +10,7 @@ from database import engine, get_db
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-WEBAPP_URL = "https://kelajak-bot-frontend.vercel.app" 
+WEBAPP_URL = "https://kelajak-bot-frontend.vercel.app"  # O'zingizning Vercel domeningiz
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -19,33 +19,98 @@ app = FastAPI()
 # 🧠 Foydalanuvchilarning testdagi holatini saqlab turuvchi vaqtinchalik xotira
 user_test_state = {}
 
-# 📋 DIAGNOSTIKA SAVOLLARI BAZASI
+# 📋 GIBRID DIAGNOSTIKA SAVOLLARI (10 TA)
+# 1-6 savollar: Mijoz qobiliyatini aniqlash (Qiymat)
+# 7-10 savollar: Biznes uchun CustDev va Sotuv ilmog'i (PM mantiqi)
 QUESTIONS = [
     {
-        "text": "<b>1-savol:</b> Qaysi muhitda ishlash sizga ko'proq zavq beradi?",
+        "text": "<b>1-savol:</b> Bo'sh vaqtingizda oldingizda 4 ta loyiha turibdi. Qaysi birini tanlaysiz?",
         "options": [
-            {"text": "A) Odamlar gavjum, jamoaviy muhit 👥", "val": "A"},
-            {"text": "B) Sokin, kompyuter va men 💻", "val": "B"},
-            {"text": "C) Doimiy harakat va ijod 🎨", "val": "C"},
-            {"text": "D) Qat'iy tartib va qoidalar 📊", "val": "D"}
+            {"text": "A) Boshqotirma yechish, tizim yoki kod yozish 💻", "val": "A"},
+            {"text": "B) Chiroyli dizayn yoki vizual asar yaratish 🎨", "val": "B"},
+            {"text": "C) Jamoa bilan muloqot va yangi g'oyalarni muhokama qilish 🗣", "val": "C"},
+            {"text": "D) Hujjatlarni va jarayonlarni tartibga keltirish 📋", "val": "D"}
         ]
     },
     {
-        "text": "<b>2-savol:</b> Bo'sh vaqtingizda nima qilishni yoqtirasiz?",
+        "text": "<b>2-savol:</b> Qanday turdagi kitoblar/ma'lumotlar sizni ko'proq jalb qiladi?",
         "options": [
-            {"text": "A) Do'stlar bilan suhbatlashish 🗣", "val": "A"},
-            {"text": "B) Yangi texnologiyalarni o'rganish 📱", "val": "B"},
-            {"text": "C) Nimadir yasash, chizish 🖌", "val": "C"},
-            {"text": "D) Kitob o'qish, faktlarni tahlil qilish 📖", "val": "D"}
+            {"text": "A) Texnologiyalar va ilmiy kashfiyotlar 🚀", "val": "A"},
+            {"text": "B) San'at, psixologiya va ijod sirlari 🎭", "val": "B"},
+            {"text": "C) Biznes, marketing va liderlik 📈", "val": "C"},
+            {"text": "D) Taym-menejment va shaxsiy samaradorlik ⏳", "val": "D"}
         ]
     },
     {
-        "text": "<b>3-savol:</b> Kelajakdagi daromadingiz qanday bo'lishini xohlaysiz?",
+        "text": "<b>3-savol:</b> Jamoaviy ishda siz odatda qanday rolni tanlaysiz?",
         "options": [
-            {"text": "A) Barqaror oylik maosh 💰", "val": "A"},
-            {"text": "B) Loyihaga qarab, katta daromad 🚀", "val": "B"},
-            {"text": "C) Shaxsiy brendim orqali keladigan foyda 🌟", "val": "C"},
-            {"text": "D) Passiv daromad va sarmoyalar 📈", "val": "D"}
+            {"text": "A) \"Miya\" – texnik va mantiqiy yechim topuvchi 🧩", "val": "A"},
+            {"text": "B) \"Yurak\" – kreativlik va go'zallik kirituvchi 🎨", "val": "B"},
+            {"text": "C) \"Lider\" – hammani birlashtirib, yo'l ko'rsatuvchi 🚩", "val": "C"},
+            {"text": "D) \"Nazoratchi\" – ishlarni vaqtida bitishini ta'minlovchi ⏱", "val": "D"}
+        ]
+    },
+    {
+        "text": "<b>4-savol:</b> Kutilmagan muammoga duch keldingiz. Birinchi reaksiyangiz qanday?",
+        "options": [
+            {"text": "A) Muammoning mantiqiy ildizini (bug) qidiraman 🔍", "val": "A"},
+            {"text": "B) Yangicha, nostandart yechim o'ylab topaman 💡", "val": "B"},
+            {"text": "C) Boshqalar bilan maslahatlashib, birga hal qilaman 👥", "val": "C"},
+            {"text": "D) Yo'riqnoma va qoidalarga qarab harakat qilaman 📖", "val": "D"}
+        ]
+    },
+    {
+        "text": "<b>5-savol:</b> Siz uchun eng ideal ish muhiti qanday?",
+        "options": [
+            {"text": "A) Tinch, sokin, kompyuterim bilan yolg'iz 🎧", "val": "A"},
+            {"text": "B) Ilhom beruvchi, erkin va ijodiy muhit 🌈", "val": "B"},
+            {"text": "C) Odamlar gavjum, muzokaralar qaynaydigan joy 🏢", "val": "C"},
+            {"text": "D) Har bir narsa o'z joyida bo'lgan, qat'iy tartibli ofis 📁", "val": "D"}
+        ]
+    },
+    {
+        "text": "<b>6-savol:</b> Ishingizda siz uchun eng muhim qadriyat nima?",
+        "options": [
+            {"text": "A) Intellektual o'sish va yangi texnologiyalar 📈", "val": "A"},
+            {"text": "B) O'z g'oyalarimni erkin namoyon etish 🕊", "val": "B"},
+            {"text": "C) Jamiyatga ta'sir qilish va tanilish 🌟", "val": "C"},
+            {"text": "D) Barqarorlik, aniqlik va xotirjamlik ⚓️", "val": "D"}
+        ]
+    },
+    {
+        "text": "<b>7-savol:</b> (Keling, biroz o'tmishga qaytamiz) Hozirgi yo'lingizni (kasb/o'qish) tanlashda eng katta ta'sir kim/nima bo'lgan?",
+        "options": [
+            {"text": "Shaxsan o'zimning qiziqishim", "val": "CustDev"},
+            {"text": "Ota-onam yoki oilam", "val": "CustDev"},
+            {"text": "Ustozlar yoki do'stlarim", "val": "CustDev"},
+            {"text": "Daromad, obro' yoki tasodif", "val": "CustDev"}
+        ]
+    },
+    {
+        "text": "<b>8-savol:</b> Kasb bo'yicha noto'g'ri qaror qilganingizni his qilgan paytingiz bo'lganmi? Agar bo'lsa, bu asosan nima yo'qotishga olib keldi?",
+        "options": [
+            {"text": "Vaqt (yillarim ketdi)", "val": "CustDev"},
+            {"text": "Pul (samarasiz kurs/kontrakt)", "val": "CustDev"},
+            {"text": "Motivatsiya va asablarim", "val": "CustDev"},
+            {"text": "Bunday holat bo'lmagan", "val": "CustDev"}
+        ]
+    },
+    {
+        "text": "<b>9-savol:</b> Hozirgi holatingizda aynan nimani bilishni eng ko'p xohlardingiz?",
+        "options": [
+            {"text": "Menga mos aniq kasblar ro'yxatini", "val": "CustDev"},
+            {"text": "O'z qobiliyatim va kuchli tomonlarimni", "val": "CustDev"},
+            {"text": "Qaysi sohada tezroq ish topish mumkinligini", "val": "CustDev"},
+            {"text": "Qayerdan va qanday ta'lim olishni", "val": "CustDev"}
+        ]
+    },
+    {
+        "text": "<b>10-savol (Yakuniy):</b> Agar sizga qobiliyatingizga to'liq mos kasblar va aniq qadamlar ko'rsatilgan \"Shaxsiy Yo'l Xaritasi\" (PDF) tayyorlab berilsa, bunday yordam uchun pul to'lashga tayyor bo'larmidingiz?",
+        "options": [
+            {"text": "Sifatiga qarab to'lashim mumkin 💳", "val": "Monetize"},
+            {"text": "Hozir pul to'lashga tayyorman 💰", "val": "Monetize"},
+            {"text": "Faqat bepul bo'lsa foydalanaman 🎁", "val": "Monetize"},
+            {"text": "Hozircha kerak emas ✋", "val": "Monetize"}
         ]
     }
 ]
@@ -72,11 +137,11 @@ async def edit_message(chat_id: int, message_id: int, text: str, reply_markup: d
 async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
     
-    # === 1. ODDIY XABARLAR VA WEBAPP KELGANDA ===
     if "message" in data:
         msg = data["message"]
         chat_id = msg["chat"]["id"]
         
+        # 1. /start bosilganda
         if "text" in msg and msg["text"] == "/start":
             keyboard = {
                 "keyboard": [[{"text": "🎯 Holatni aniqlash (1-bosqich)", "web_app": {"url": WEBAPP_URL}}]],
@@ -84,57 +149,38 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             }
             await send_message(chat_id, "👋 Assalomu alaykum!\nPastdagi tugmani bosib, dastlabki holatingizni aniqlang:", keyboard)
             
+        # 2. Frontend'dan ma'lumot kelganda
         elif "web_app_data" in msg:
             try:
                 raw_data = msg["web_app_data"]["data"]
                 parsed = json.loads(raw_data)
-                
                 name = parsed.get("name", "Noma'lum")
-                phone = parsed.get("phone", "Noma'lum")
-                answers = parsed.get("survey_answers", {})
-                
-                user = db.query(models.User).filter(models.User.telegram_id == str(chat_id)).first()
-                if not user:
-                    user = models.User(telegram_id=str(chat_id), full_name=name, phone_number=phone)
-                    db.add(user)
-                else:
-                    user.full_name = name
-                    user.phone_number = phone
-                db.commit()
-                db.refresh(user)
-                
-                survey = models.SurveyResponse(user_id=user.id, raw_answers=answers)
-                db.add(survey)
-                db.commit()
                 
                 # 1-Bosqich tugadi, 2-Bosqichga o'tish tugmasi
                 success_text = (
                     f"✅ Rahmat, <b>{name}</b>! Sizning holatingizni tahlil qildik.\n\n"
-                    f"Aynan sizga qaysi kasb mos kelishini aniqlash uchun "
-                    f"<b>15 savollik Chuqur Diagnostikani</b> boshlaymiz.\n\n👇 Tayyor bo'lsangiz, tugmani bosing!"
+                    f"Aynan sizga qaysi kasb mos kelishini aniqlash va <b>Shaxsiy Yo'l xaritangizni</b> "
+                    f"yaratish uchun 10 savollik Chuqur Diagnostikani boshlaymiz.\n\n👇 Tayyor bo'lsangiz, tugmani bosing!"
                 )
                 keyboard = {
                     "inline_keyboard": [[{"text": "🚀 Diagnostikani boshlash", "callback_data": "start_test"}]]
                 }
                 await send_message(chat_id, success_text, keyboard)
-                
             except Exception as e:
                 print("Xatolik:", e)
-                await send_message(chat_id, "Kechirasiz, ma'lumotni saqlashda xatolik yuz berdi.")
                 
-    # === 2. INLINE TUGMALAR BOSILGANDA (DIAGNOSTIKA) ===
+    # === 3. INLINE TUGMALAR BOSILGANDA (DIAGNOSTIKA O'YINI) ===
     elif "callback_query" in data:
         cb = data["callback_query"]
         chat_id = cb["message"]["chat"]["id"]
         message_id = cb["message"]["message_id"]
-        cb_data = cb["data"]  # Tugmaga yashiringan kod
+        cb_data = cb["data"] 
         
         # Testni boshlash
         if cb_data == "start_test":
-            user_test_state[chat_id] = {"step": 0, "answers": []}
+            user_test_state[chat_id] = {"step": 0, "profile_answers": []}
             q = QUESTIONS[0]
-            
-            keyboard = {"inline_keyboard": [[{"text": opt["text"], "callback_data": f"ans_{opt['val']}"}] for opt in q["options"]]}
+            keyboard = {"inline_keyboard": [[{"text": opt["text"], "callback_data": f"ans_0_{idx}"}] for idx, opt in enumerate(q["options"])]}
             await edit_message(chat_id, message_id, q["text"], keyboard)
             
         # Savolga javob berilganda
@@ -143,37 +189,56 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 await send_message(chat_id, "Iltimos, testni qaytadan boshlang (/start).")
                 return {"status": "ok"}
                 
-            answer_val = cb_data.split("_")[1]
-            current_step = user_test_state[chat_id]["step"]
+            parts = cb_data.split("_")
+            step = int(parts[1])
+            opt_idx = int(parts[2])
             
-            # Javobni saqlab qo'yamiz
-            user_test_state[chat_id]["answers"].append(answer_val)
-            user_test_state[chat_id]["step"] += 1
-            next_step = user_test_state[chat_id]["step"]
+            # Tanlangan variantning qiymatini olish (A, B, C, D yoki CustDev)
+            selected_val = QUESTIONS[step]["options"][opt_idx]["val"]
             
-            # Agar savollar tugamagan bo'lsa, keyingisini chiqaramiz
+            # Faqat 1-6 savollarning javoblarini shaxsiyat tahlili uchun yig'amiz
+            if selected_val in ["A", "B", "C", "D"]:
+                user_test_state[chat_id]["profile_answers"].append(selected_val)
+                
+            # Keyingi qadamga o'tish
+            next_step = step + 1
+            user_test_state[chat_id]["step"] = next_step
+            
             if next_step < len(QUESTIONS):
                 q = QUESTIONS[next_step]
-                keyboard = {"inline_keyboard": [[{"text": opt["text"], "callback_data": f"ans_{opt['val']}"}] for opt in q["options"]]}
+                keyboard = {"inline_keyboard": [[{"text": opt["text"], "callback_data": f"ans_{next_step}_{idx}"}] for idx, opt in enumerate(q["options"])]}
                 await edit_message(chat_id, message_id, q["text"], keyboard)
                 
-            # Agar savollar tugagan bo'lsa, NATIJA
+            # TEST TUGADI -> NATIJANI CHIQARISH
             else:
-                final_answers = user_test_state[chat_id]["answers"]
+                profile = user_test_state[chat_id]["profile_answers"]
                 
-                # Bu yerda javoblarni sanash mantiqini yozamiz
-                a_count = final_answers.count("A")
-                b_count = final_answers.count("B")
+                a_count = profile.count("A") # Tech
+                b_count = profile.count("B") # Creative
+                c_count = profile.count("C") # Management
+                d_count = profile.count("D") # Process
                 
-                # Hozircha oddiy xabar
+                # Eng ko'p tanlangan harfni topish
+                counts = {"A": a_count, "B": b_count, "C": c_count, "D": d_count}
+                best_match = max(counts, key=counts.get)
+                
+                if best_match == "A":
+                    avatar = "💻 Texnologiyalar va Analitika (Dasturchi, Data Analyst)"
+                elif best_match == "B":
+                    avatar = "🎨 Kreativ va Dizayn (UX/UI, Grafik dizayn, SMM)"
+                elif best_match == "C":
+                    avatar = "🗣 Boshqaruv va Muloqot (Project Manager, Sales)"
+                else:
+                    avatar = "📋 Tizim va Tartib (QA Tester, Analitik)"
+
                 result_text = (
-                    f"🎉 <b>Tabriklaymiz! Siz diagnostikadan o'tdingiz.</b>\n\n"
-                    f"Sizning javoblaringiz bazaga qabul qilindi. A variantlar: {a_count} ta.\n"
-                    f"<i>Sizning shaxsiy PDF yo'l xaritangiz tayyorlanmoqda...</i>"
+                    f"🎉 <b>Diagnostika muvaffaqiyatli yakunlandi!</b>\n\n"
+                    f"Sizning javoblaringiz tahlil qilinib, quyidagi fitrat aniqlandi:\n"
+                    f"👉 <b>{avatar}</b>\n\n"
+                    f"<i>Sizning shaxsiy PDF yo'l xaritangiz tayyorlanmoqda. Botni kuzatib boring!</i>"
                 )
-                await edit_message(chat_id, message_id, result_text)
                 
-                # Xotirani tozalash
+                await edit_message(chat_id, message_id, result_text)
                 del user_test_state[chat_id]
 
     return {"status": "ok"}
