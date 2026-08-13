@@ -43,6 +43,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             await send_message(chat_id, "👋 Assalomu alaykum!\nPastdagi tugmani bosib diagnostikani boshlang:", keyboard)
             
         # 2. Frontend'dan ma'lumot kelganda (WebApp yopilganda)
+        # 2. Frontend'dan ma'lumot kelganda (WebApp yopilganda)
         elif "web_app_data" in msg:
             try:
                 raw_data = msg["web_app_data"]["data"]
@@ -50,7 +51,8 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 
                 name = parsed.get("name", "Noma'lum")
                 phone = parsed.get("phone", "Noma'lum")
-                answers = parsed.get("answers", {})
+                # XATO SHU YERDA EDI: endi "survey_answers" deb qabul qilamiz
+                answers = parsed.get("survey_answers", {})
                 
                 # Bazaga yozish (Ism va raqam)
                 user = db.query(models.User).filter(models.User.telegram_id == str(chat_id)).first()
@@ -63,14 +65,22 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 db.commit()
                 db.refresh(user)
                 
-                # Bazaga yozish (Savol-javoblar)
+                # Bazaga yozish (Og'riqlar va holat / Avatar)
                 survey = models.SurveyResponse(user_id=user.id, raw_answers=answers)
                 db.add(survey)
                 db.commit()
                 
-                await send_message(chat_id, f"✅ Rahmat, {name}! Ma'lumotlaringiz xavfsiz saqlandi.")
+                # Mijozga yuboriladigan ZANJIR (Funnel) xabari
+                success_text = (
+                    f"✅ Rahmat, {name}! Sizning holatingizni tahlil qildik.\n\n"
+                    f"Muammoni to'liq hal qilish va sizga eng mos kasbni topish uchun "
+                    f"tez orada <b>15 savollik Chuqur Diagnostikani</b> boshlaymiz! Bizdan uzoqlashmang."
+                )
+                await send_message(chat_id, success_text)
+                
             except Exception as e:
                 print("Xatolik:", e)
-                await send_message(chat_id, "Kechirasiz, xatolik yuz berdi.")
+                await send_message(chat_id, "Kechirasiz, ma'lumotni saqlashda xatolik yuz berdi.")
                 
+    # return {"status": "ok"}
     return {"status": "ok"}
