@@ -165,8 +165,25 @@ async def answer_callback(callback_id: str):
     try: await http_client.post(url, json={"callback_query_id": callback_id})
     except: pass
 
-# 🤖 WEBHOOK
-# ... Tepadagi savollar va gspread kodlari o'z o'rnida qoladi ...
+# 🕒 AVTOMATIK SOTUV XABARI (FOLLOW-UP TAYMER)
+async def send_followup_message(chat_id: int, name: str, avatar: str):
+    # DIQQAT: Hozir test qilish uchun 60 soniya (1 daqiqa) qilingan. 
+    # Haqiqiy mijozlar uchun buni 86400 (24 soat) ga o'zgartiramiz!
+    await asyncio.sleep(60) 
+    
+    text = (
+        f"Assalomu alaykum, <b>{name}</b>! Kecha o'zingizga mos bo'lgan <b>{avatar}</b> yo'l xaritasini yuklab olgan edingiz.\n\n"
+        f"O'qib chiqdingizmi? Fikrlaringiz qanday?\n\n"
+        f"🚀 Agar bu yo'lni o'zingiz yolg'iz, xatolar qilib bosib o'tishni istamasangiz, bizning professional mentorlar bilan 100% amaliyotga asoslangan maxsus tizimimizga yoziling!\n\n"
+        f"👉 <i>O'z kelajagingizga sarmoya kiritish va bepul konsultatsiya olish uchun quyidagi tugmani bosing:</i>"
+    )
+    
+    # "Sizning_Sotuvchingiz" degan joyga o'z profilingizni yoki sotuvchingizni userneymini yozing (Masalan: ulugbek_admin)
+    keyboard = {"inline_keyboard": [[{"text": "📞 Mutaxassis bilan bog'lanish", "url": "https://t.me/Sizning_Sotuvchingiz"}]]}
+    
+    await send_message(chat_id, text, keyboard)
+    print(f"Follow-up xabari yuborildi: {name}")
+
 
 # 🤖 WEBHOOK
 @app.post("/webhook")
@@ -188,17 +205,14 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             doc_name = msg["document"].get("file_name", "Noma'lum fayl")
             await send_message(chat_id, f"✅ <b>{doc_name}</b> qabul qilindi!\n\nSizning FILE ID kodingiz:\n<code>{doc_id}</code>")
             
-        # 🟢 MANA SHU YERDA RAQAM VA ISM BAZAGA SAQLANADI (Tog'rilandi)
         elif "web_app_data" in msg:
             try:
                 raw_data = msg["web_app_data"]["data"]
                 parsed = json.loads(raw_data)
                 
-                # Formaga kiritilgan ma'lumotlarni ajratib olamiz
                 name = parsed.get("name", "Noma'lum")
-                phone = parsed.get("phone", "Noma'lum") # Forma raqami ushlandi!
+                phone = parsed.get("phone", "Noma'lum") 
                 
-                # Neon bazaga yangilab yozib qo'yamiz
                 user = db.query(models.User).filter(models.User.telegram_id == str(chat_id)).first()
                 if not user:
                     user = models.User(telegram_id=str(chat_id), full_name=name, phone_number=phone)
@@ -219,7 +233,6 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 print("Xatolik WebApp:", e)
                 
     elif "callback_query" in data:
-# ... Kodning qolgan joylari o'zgarishsiz qoladi ...
         cb = data["callback_query"]
         cb_id = cb["id"]
         chat_id = cb["message"]["chat"]["id"]
@@ -250,7 +263,6 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 selected_val = QUESTIONS[step]["options"][opt_idx]["val"]
                 selected_text = QUESTIONS[step]["options"][opt_idx]["text"]
                 
-                # Barcha javoblarni saqlaymiz (Jadval uchun)
                 user_test_state[chat_id]["all_answers"][step] = selected_text
                 
                 if selected_val in ["A", "B", "C", "D"]:
@@ -274,7 +286,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     counts = {"A": a_count, "B": b_count, "C": c_count, "D": d_count}
                     best_match = max(counts, key=counts.get)
                     
-                    # ⚠️ O'ZINGIZNING FILE ID LARINGIZNI QO'YISHNI UNUTMANG !!!
+                    # ⚠️ O'ZINGIZNING FILE ID LARINGIZNI QO'YISHNI UNUTMANG
                     FILE_ID_DATA_ANALYST = "SHU_YERGA_FILE_ID_YOZILADI" 
                     FILE_ID_UI_UX = "SHU_YERGA_FILE_ID_YOZILADI"
                     FILE_ID_PM = "SHU_YERGA_FILE_ID_YOZILADI"
@@ -282,13 +294,13 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     file_to_send = None
 
                     if best_match == "A":
-                        avatar = "💻 Data Analyst (Ma'lumotlar Tahlilchisi)"
+                        avatar = "💻 Data Analyst"
                         file_to_send = FILE_ID_DATA_ANALYST
                     elif best_match == "B":
-                        avatar = "🎨 UX/UI Designer (Dizayner)"
+                        avatar = "🎨 UX/UI Designer"
                         file_to_send = FILE_ID_UI_UX
                     elif best_match == "C":
-                        avatar = "🗣 Project Manager (Boshqaruvchi)"
+                        avatar = "🗣 Project Manager"
                         file_to_send = FILE_ID_PM
                     else:
                         avatar = "📋 Tizim va Tartib"
@@ -307,16 +319,16 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     else:
                         await send_message(chat_id, "⚠️ <i>(Eslatma: Hozircha bu yo'nalish uchun PDF fayl tayyorlanmoqda.)</i>")
                     
-                    # ----------------------------------------------------
-                    # 📊 GOOGLE SHEETS GA MA'LUMOTLARNI YUBORISH
-                    # ----------------------------------------------------
                     payment_intent = user_test_state[chat_id]["all_answers"].get(9, "Noma'lum")
                     user = db.query(models.User).filter(models.User.telegram_id == str(chat_id)).first()
                     u_name = user.full_name if user else "Noma'lum"
                     u_phone = user.phone_number if user else "Noma'lum"
                     
-                    # Jadvalga yozish jarayoni botni qotirib qo'ymasligi uchun orqa fonda (thread) ishlatamiz
+                    # 1. Sheetsga yozamiz
                     asyncio.create_task(asyncio.to_thread(append_to_sheet, u_name, u_phone, avatar, payment_intent))
+                    
+                    # 2. 🕒 SOTUV TAYMERINI ISHGA TUSHIRAMIZ (Orqa fonda)
+                    asyncio.create_task(send_followup_message(chat_id, u_name, avatar))
                     
                     del user_test_state[chat_id]
 
