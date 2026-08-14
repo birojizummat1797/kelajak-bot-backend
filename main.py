@@ -179,7 +179,7 @@ async def send_followup_message(chat_id: int, name: str, avatar: str):
     )
     
     # "Sizning_Sotuvchingiz" degan joyga o'z profilingizni yoki sotuvchingizni userneymini yozing (Masalan: ulugbek_admin)
-    keyboard = {"inline_keyboard": [[{"text": "📞 Mutaxassis bilan bog'lanish", "url": "https://t.me/Sizning_Sotuvchingiz"}]]}
+    keyboard = {"inline_keyboard": [[{"text": "📞 Mutaxassis bilan bog'lanish", "url": "https://t.me/ulugbek_aliboyev"}]]}
     
     await send_message(chat_id, text, keyboard)
     print(f"Follow-up xabari yuborildi: {name}")
