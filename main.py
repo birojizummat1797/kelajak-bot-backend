@@ -280,7 +280,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     # Test yakunlandi, natijalarni hisoblaymiz
                     profile = user_test_state[chat_id]["profile_answers"]
                     
-                    # Faqat dastlabki 6 ta savoldan A,B,C,D ni hisoblaymiz (qolganlari CustDev va Monetize)
+                    # Faqat dastlabki 6 ta savoldan A,B,C,D ni hisoblaymiz
                     answers_1_to_6 = profile[:6]
                     counts = {
                         "A": answers_1_to_6.count("A"), 
@@ -288,7 +288,25 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                         "C": answers_1_to_6.count("C"), 
                         "D": answers_1_to_6.count("D")
                     }
+                    
+                    # Eng yuqori balni topamiz
+                    max_score = max(counts.values())
                     best_match = max(counts, key=counts.get)
+                    
+                    # 🛑 HALOLLIK FILTRI (Javoblar aralashib ketsa)
+                    if max_score < 3:
+                        result_text = (
+                            "⚠️ <b>Natija noaniq!</b>\n\n"
+                            "Kechirasiz, javoblaringiz bir-biriga juda aralashib ketgani sababli, biz sizning profilingizga qaysi kasb 100% mos kelishini aniqlay olmadik.\n\n"
+                            "Bizning asosiy tamoyilimiz — halollik! Barchaga ham bu sohalar to'g'ri kelavermaydi yoki ehtimol siz savollarga ikkilanib javob bergandirsiz.\n\n"
+                            "🔄 <i>Iltimos, o'zingizni chuqur tahlil qilib, /start buyrug'i orqali testni boshqatdan ishlashingizni so'raymiz. Bu biz sizga haqiqiy va to'g'ri yordam bera olishimiz uchun juda muhim!</i>"
+                        )
+                        await edit_message(chat_id, message_id, result_text)
+                        del user_test_state[chat_id]
+                        return {"status": "ok"} # Shu yerdan jarayon to'xtaydi
+
+                    # --------------------------------------------------------
+                    # Agar javoblar aniq bo'lsa, davom etamiz (Eski kodingiz)
                     
                     # ⚠️ 5 TA PDF UCHUN FILE ID'LARNI SHU YERGA YOZING!
                     FILE_ID_DATA_ANALYST = "BQACAgIAAxkBAAOwan7zTn-jH74G3-uoa6v7fI8fkSkAAj2jAAIu8_lL-KgMfz4EPXc9BA" 
