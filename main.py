@@ -1,9 +1,14 @@
 import os
 import json
 import httpx
+import asyncio
+from datetime import datetime
 from fastapi import FastAPI, Request, Depends
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
+
+import gspread
+from google.oauth2.service_account import Credentials
 
 import models
 from database import engine, get_db
@@ -12,14 +17,13 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBAPP_URL = "https://kelajak-bot-frontend.vercel.app" 
 
+# Google Sheets sozlamalari
+SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
+CREDS_JSON = os.getenv("GOOGLE_CREDENTIALS")
+
 models.Base.metadata.create_all(bind=engine)
-
 app = FastAPI()
-
 user_test_state = {}
-
-# 🚀 GLOBAL HTTP CLIENT (Tizimning yashindek tez ishlashi siri)
-# Barcha xabarlar bitta ochiq kanal orqali ketadi (timeout 15 soniya qilib belgilandi)
 http_client = httpx.AsyncClient(timeout=15.0)
 
 # 📋 GIBRID DIAGNOSTIKA SAVOLLARI (10 TA)
@@ -116,55 +120,61 @@ QUESTIONS = [
     }
 ]
 
-# ⚡️ YANGILANGAN TELEGRAM API FUNKSIYALARI (Xatolikdan himoyalangan)
+# 📝 GOOGLE JADVALGA YOZISH FUNKSIYASI
+def append_to_sheet(name, phone, result_text, payment_intent):
+    try:
+        if not CREDS_JSON or not SHEET_ID:
+            print("Google kalitlari topilmadi!")
+            return
+            
+        creds_dict = json.loads(CREDS_JSON)
+        scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key(SHEET_ID).sheet1
+        
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        sheet.append_row([now, name, phone, result_text, payment_intent])
+        print(f"Jadvalga yozildi: {name}")
+    except Exception as e:
+        print(f"Google Sheets xatosi: {e}")
+
+# ⚡️ TELEGRAM API FUNKSIYALARI
 async def send_message(chat_id: int, text: str, reply_markup: dict = None):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
-    if reply_markup:
-        payload["reply_markup"] = reply_markup
-    try:
-        await http_client.post(url, json=payload)
-    except Exception as e:
-        print("Telegram Send Error:", e)
+    if reply_markup: payload["reply_markup"] = reply_markup
+    try: await http_client.post(url, json=payload)
+    except: pass
 
 async def edit_message(chat_id: int, message_id: int, text: str, reply_markup: dict = None):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageText"
     payload = {"chat_id": chat_id, "message_id": message_id, "text": text, "parse_mode": "HTML"}
-    if reply_markup:
-        payload["reply_markup"] = reply_markup
-    try:
-        await http_client.post(url, json=payload)
-    except Exception as e:
-        print("Telegram Edit Error:", e)
+    if reply_markup: payload["reply_markup"] = reply_markup
+    try: await http_client.post(url, json=payload)
+    except: pass
 
 async def send_document(chat_id: int, document_id: str, caption: str = ""):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
     payload = {"chat_id": chat_id, "document": document_id, "caption": caption, "parse_mode": "HTML"}
-    try:
-        await http_client.post(url, json=payload)
-    except Exception as e:
-        print("Telegram Document Error:", e)
+    try: await http_client.post(url, json=payload)
+    except: pass
 
 async def answer_callback(callback_id: str):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery"
-    try:
-        await http_client.post(url, json={"callback_query_id": callback_id})
-    except Exception as e:
-        pass # Bu xatolik botni to'xtatmasligi kerak
+    try: await http_client.post(url, json={"callback_query_id": callback_id})
+    except: pass
 
 # 🤖 WEBHOOK
 @app.post("/webhook")
 async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
-    try:
-        data = await request.json()
-    except:
-        return {"status": "ok"}
+    try: data = await request.json()
+    except: return {"status": "ok"}
     
     if "message" in data:
         msg = data["message"]
         chat_id = msg.get("chat", {}).get("id")
-        if not chat_id:
-            return {"status": "ok"}
+        if not chat_id: return {"status": "ok"}
         
         if "text" in msg and msg["text"] == "/start":
             keyboard = {"keyboard": [[{"text": "🎯 Holatni aniqlash (1-bosqich)", "web_app": {"url": WEBAPP_URL}}]], "resize_keyboard": True}
@@ -198,12 +208,11 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         message_id = cb["message"]["message_id"]
         cb_data = cb["data"] 
         
-        # Tugmani to'xtatish xabari
         await answer_callback(cb_id)
         
         try:
             if cb_data == "start_test":
-                user_test_state[chat_id] = {"step": 0, "profile_answers": []}
+                user_test_state[chat_id] = {"step": 0, "profile_answers": [], "all_answers": {}}
                 q = QUESTIONS[0]
                 keyboard = {"inline_keyboard": [[{"text": opt["text"], "callback_data": f"ans_0_{idx}"}] for idx, opt in enumerate(q["options"])]}
                 await edit_message(chat_id, message_id, q["text"], keyboard)
@@ -221,6 +230,10 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     return {"status": "ok"}
                 
                 selected_val = QUESTIONS[step]["options"][opt_idx]["val"]
+                selected_text = QUESTIONS[step]["options"][opt_idx]["text"]
+                
+                # Barcha javoblarni saqlaymiz (Jadval uchun)
+                user_test_state[chat_id]["all_answers"][step] = selected_text
                 
                 if selected_val in ["A", "B", "C", "D"]:
                     user_test_state[chat_id]["profile_answers"].append(selected_val)
@@ -243,10 +256,10 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     counts = {"A": a_count, "B": b_count, "C": c_count, "D": d_count}
                     best_match = max(counts, key=counts.get)
                     
-                    # ⚠️ O'ZINGIZNING FILE ID LARINGIZNI QO'YISHNI UNUTMANG
-                    FILE_ID_DATA_ANALYST = "BQACAgIAAxkBAAOwan7zTn-jH74G3-uoa6v7fI8fkSkAAj2jAAIu8_lL-KgMfz4EPXc9BA" 
-                    FILE_ID_UI_UX = "BQACAgIAAxkBAAOvan7zTu4kmza3yJ2eSapWATffmBUAAjyjAAIu8_lLBp31GHs8EDk9BA"
-                    FILE_ID_PM = "BQACAgIAAxkBAAOuan7zTp0xQLGn7d3p1myTPcx1qhQAAjqjAAIu8_lLFn9n5sN8j8M9BA"
+                    # ⚠️ O'ZINGIZNING FILE ID LARINGIZNI QO'YISHNI UNUTMANG !!!
+                    FILE_ID_DATA_ANALYST = "SHU_YERGA_FILE_ID_YOZILADI" 
+                    FILE_ID_UI_UX = "SHU_YERGA_FILE_ID_YOZILADI"
+                    FILE_ID_PM = "SHU_YERGA_FILE_ID_YOZILADI"
                     
                     file_to_send = None
 
@@ -275,6 +288,17 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                         await send_document(chat_id, file_to_send, f"🔥 Sizning Shaxsiy Yo'l xaritangiz: {avatar}")
                     else:
                         await send_message(chat_id, "⚠️ <i>(Eslatma: Hozircha bu yo'nalish uchun PDF fayl tayyorlanmoqda.)</i>")
+                    
+                    # ----------------------------------------------------
+                    # 📊 GOOGLE SHEETS GA MA'LUMOTLARNI YUBORISH
+                    # ----------------------------------------------------
+                    payment_intent = user_test_state[chat_id]["all_answers"].get(9, "Noma'lum")
+                    user = db.query(models.User).filter(models.User.telegram_id == str(chat_id)).first()
+                    u_name = user.full_name if user else "Noma'lum"
+                    u_phone = user.phone_number if user else "Noma'lum"
+                    
+                    # Jadvalga yozish jarayoni botni qotirib qo'ymasligi uchun orqa fonda (thread) ishlatamiz
+                    asyncio.create_task(asyncio.to_thread(append_to_sheet, u_name, u_phone, avatar, payment_intent))
                     
                     del user_test_state[chat_id]
 

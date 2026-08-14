@@ -19,3 +19,5 @@ sqlalchemy
 psycopg2-binary
 python-dotenv
 httpx
+gspread
+google-auth
