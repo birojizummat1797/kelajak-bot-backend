@@ -16,12 +16,9 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# 🧠 Foydalanuvchilarning testdagi holatini saqlab turuvchi vaqtinchalik xotira
 user_test_state = {}
 
 # 📋 GIBRID DIAGNOSTIKA SAVOLLARI (10 TA)
-# 1-6 savollar: Mijoz qobiliyatini aniqlash (Qiymat)
-# 7-10 savollar: Biznes uchun CustDev va Sotuv ilmog'i (PM mantiqi)
 QUESTIONS = [
     {
         "text": "<b>1-savol:</b> Bo'sh vaqtingizda oldingizda 4 ta loyiha turibdi. Qaysi birini tanlaysiz?",
@@ -78,7 +75,7 @@ QUESTIONS = [
         ]
     },
     {
-        "text": "<b>7-savol:</b> (Keling, biroz o'tmishga qaytamiz) Hozirgi yo'lingizni (kasb/o'qish) tanlashda eng katta ta'sir kim/nima bo'lgan?",
+        "text": "<b>7-savol:</b> Hozirgi yo'lingizni (kasb/o'qish) tanlashda eng katta ta'sir kim/nima bo'lgan?",
         "options": [
             {"text": "Shaxsan o'zimning qiziqishim", "val": "CustDev"},
             {"text": "Ota-onam yoki oilam", "val": "CustDev"},
@@ -132,6 +129,13 @@ async def edit_message(chat_id: int, message_id: int, text: str, reply_markup: d
     async with httpx.AsyncClient() as client:
         await client.post(url, json=payload)
 
+# 📄 PDF YUBORISH FUNKSIYASI
+async def send_document(chat_id: int, document_id: str, caption: str = ""):
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
+    payload = {"chat_id": chat_id, "document": document_id, "caption": caption, "parse_mode": "HTML"}
+    async with httpx.AsyncClient() as client:
+        await client.post(url, json=payload)
+
 # 🤖 YAGONA VA TOZA WEBHOOK
 @app.post("/webhook")
 async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
@@ -141,7 +145,6 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         msg = data["message"]
         chat_id = msg["chat"]["id"]
         
-        # 1. /start bosilganda
         if "text" in msg and msg["text"] == "/start":
             keyboard = {
                 "keyboard": [[{"text": "🎯 Holatni aniqlash (1-bosqich)", "web_app": {"url": WEBAPP_URL}}]],
@@ -149,41 +152,34 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             }
             await send_message(chat_id, "👋 Assalomu alaykum!\nPastdagi tugmani bosib, dastlabki holatingizni aniqlang:", keyboard)
             
-        # 2. Frontend'dan ma'lumot kelganda
         elif "web_app_data" in msg:
             try:
                 raw_data = msg["web_app_data"]["data"]
                 parsed = json.loads(raw_data)
                 name = parsed.get("name", "Noma'lum")
                 
-                # 1-Bosqich tugadi, 2-Bosqichga o'tish tugmasi
                 success_text = (
                     f"✅ Rahmat, <b>{name}</b>! Sizning holatingizni tahlil qildik.\n\n"
                     f"Aynan sizga qaysi kasb mos kelishini aniqlash va <b>Shaxsiy Yo'l xaritangizni</b> "
                     f"yaratish uchun 10 savollik Chuqur Diagnostikani boshlaymiz.\n\n👇 Tayyor bo'lsangiz, tugmani bosing!"
                 )
-                keyboard = {
-                    "inline_keyboard": [[{"text": "🚀 Diagnostikani boshlash", "callback_data": "start_test"}]]
-                }
+                keyboard = {"inline_keyboard": [[{"text": "🚀 Diagnostikani boshlash", "callback_data": "start_test"}]]}
                 await send_message(chat_id, success_text, keyboard)
             except Exception as e:
                 print("Xatolik:", e)
                 
-    # === 3. INLINE TUGMALAR BOSILGANDA (DIAGNOSTIKA O'YINI) ===
     elif "callback_query" in data:
         cb = data["callback_query"]
         chat_id = cb["message"]["chat"]["id"]
         message_id = cb["message"]["message_id"]
         cb_data = cb["data"] 
         
-        # Testni boshlash
         if cb_data == "start_test":
             user_test_state[chat_id] = {"step": 0, "profile_answers": []}
             q = QUESTIONS[0]
             keyboard = {"inline_keyboard": [[{"text": opt["text"], "callback_data": f"ans_0_{idx}"}] for idx, opt in enumerate(q["options"])]}
             await edit_message(chat_id, message_id, q["text"], keyboard)
             
-        # Savolga javob berilganda
         elif cb_data.startswith("ans_"):
             if chat_id not in user_test_state:
                 await send_message(chat_id, "Iltimos, testni qaytadan boshlang (/start).")
@@ -192,15 +188,11 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             parts = cb_data.split("_")
             step = int(parts[1])
             opt_idx = int(parts[2])
-            
-            # Tanlangan variantning qiymatini olish (A, B, C, D yoki CustDev)
             selected_val = QUESTIONS[step]["options"][opt_idx]["val"]
             
-            # Faqat 1-6 savollarning javoblarini shaxsiyat tahlili uchun yig'amiz
             if selected_val in ["A", "B", "C", "D"]:
                 user_test_state[chat_id]["profile_answers"].append(selected_val)
                 
-            # Keyingi qadamga o'tish
             next_step = step + 1
             user_test_state[chat_id]["step"] = next_step
             
@@ -209,36 +201,54 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 keyboard = {"inline_keyboard": [[{"text": opt["text"], "callback_data": f"ans_{next_step}_{idx}"}] for idx, opt in enumerate(q["options"])]}
                 await edit_message(chat_id, message_id, q["text"], keyboard)
                 
-            # TEST TUGADI -> NATIJANI CHIQARISH
             else:
                 profile = user_test_state[chat_id]["profile_answers"]
+                a_count = profile.count("A")
+                b_count = profile.count("B")
+                c_count = profile.count("C")
+                d_count = profile.count("D")
                 
-                a_count = profile.count("A") # Tech
-                b_count = profile.count("B") # Creative
-                c_count = profile.count("C") # Management
-                d_count = profile.count("D") # Process
-                
-                # Eng ko'p tanlangan harfni topish
                 counts = {"A": a_count, "B": b_count, "C": c_count, "D": d_count}
                 best_match = max(counts, key=counts.get)
                 
-                if best_match == "A":
-                    avatar = "💻 Texnologiyalar va Analitika (Dasturchi, Data Analyst)"
-                elif best_match == "B":
-                    avatar = "🎨 Kreativ va Dizayn (UX/UI, Grafik dizayn, SMM)"
-                elif best_match == "C":
-                    avatar = "🗣 Boshqaruv va Muloqot (Project Manager, Sales)"
-                else:
-                    avatar = "📋 Tizim va Tartib (QA Tester, Analitik)"
+                # ----------------------------------------------------
+                # DIQQAT: SHU YERGA O'ZINGIZNING FILE ID'LARINGIZNI QO'YASIZ
+                # ----------------------------------------------------
+                FILE_ID_DATA_ANALYST = "AgADPaMAAi7z-Us" 
+                FILE_ID_UI_UX = "AgADPKMAAi7z-Us"
+                FILE_ID_PM = "AgADOqMAAi7z-Us"
+                
+                file_to_send = None
 
+                if best_match == "A":
+                    avatar = "💻 Texnologiyalar va Analitika (Data Analyst)"
+                    file_to_send = FILE_ID_DATA_ANALYST
+                elif best_match == "B":
+                    avatar = "🎨 Kreativ va Dizayn (UX/UI Designer)"
+                    file_to_send = FILE_ID_UI_UX
+                elif best_match == "C":
+                    avatar = "🗣 Boshqaruv va Muloqot (Project Manager)"
+                    file_to_send = FILE_ID_PM
+                else:
+                    avatar = "📋 Tizim va Tartib (QA / Biznes Analitik)"
+                    file_to_send = None # D uchun PDF hali tayyor emas
+                
                 result_text = (
                     f"🎉 <b>Diagnostika muvaffaqiyatli yakunlandi!</b>\n\n"
-                    f"Sizning javoblaringiz tahlil qilinib, quyidagi fitrat aniqlandi:\n"
+                    f"Sizning javoblaringiz tahlil qilinib, eng kuchli fitratingiz aniqlandi:\n"
                     f"👉 <b>{avatar}</b>\n\n"
-                    f"<i>Sizning shaxsiy PDF yo'l xaritangiz tayyorlanmoqda. Botni kuzatib boring!</i>"
+                    f"<i>Siz uchun maxsus tayyorlangan Shaxsiy Yo'l Xaritasini (PDF) qabul qiling! 👇</i>"
                 )
                 
+                # 1. Matnni yangilaymiz
                 await edit_message(chat_id, message_id, result_text)
+                
+                # 2. PDF faylni jo'natamiz (Agar fayl ID kiritilgan bo'lsa)
+                if file_to_send and file_to_send != "SHU_YERGA_FILE_ID_YOZILADI":
+                    await send_document(chat_id, file_to_send, f"🔥 Sizning Shaxsiy Yo'l xaritangiz: {avatar}")
+                elif best_match == "D":
+                    await send_message(chat_id, "📋 Tizim va Tartib yo'nalishi bo'yicha PDF xarita tayyorlanmoqda. Tez orada sizga yuboramiz!")
+                
                 del user_test_state[chat_id]
 
     return {"status": "ok"}
