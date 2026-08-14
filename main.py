@@ -291,11 +291,11 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     best_match = max(counts, key=counts.get)
                     
                     # ⚠️ 5 TA PDF UCHUN FILE ID'LARNI SHU YERGA YOZING!
-                    FILE_ID_DATA_ANALYST = "SHU_YERGA_FILE_ID_YOZILADI" 
-                    FILE_ID_FRONTEND = "SHU_YERGA_FILE_ID_YOZILADI"
-                    FILE_ID_UI_UX = "SHU_YERGA_FILE_ID_YOZILADI"
-                    FILE_ID_PM = "SHU_YERGA_FILE_ID_YOZILADI"
-                    FILE_ID_MARKETING = "SHU_YERGA_FILE_ID_YOZILADI"
+                    FILE_ID_DATA_ANALYST = "BQACAgIAAxkBAAOwan7zTn-jH74G3-uoa6v7fI8fkSkAAj2jAAIu8_lL-KgMfz4EPXc9BA" 
+                    FILE_ID_FRONTEND = "BQACAgIAAxkBAAPman8Ri4JydeXrEseHOtMifLE-QxkAAjuhAAIvCflL7-iehFTROt89BA"
+                    FILE_ID_UI_UX = "BQACAgIAAxkBAAOvan7zTu4kmza3yJ2eSapWATffmBUAAjyjAAIu8_lLBp31GHs8EDk9BA"
+                    FILE_ID_PM = "BQACAgIAAxkBAAOuan7zTp0xQLGn7d3p1myTPcx1qhQAAjqjAAIu8_lLFn9n5sN8j8M9BA"
+                    FILE_ID_MARKETING = "BQACAgIAAxkBAAPlan8RizLsQFsIv6X5zyMWqH1JXwcAAjqhAAIvCflLzYCUA-k5bII9BA"
                     
                     file_to_send = None
                     avatar = ""
