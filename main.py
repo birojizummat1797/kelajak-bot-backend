@@ -18,6 +18,10 @@ app = FastAPI()
 
 user_test_state = {}
 
+# 🚀 GLOBAL HTTP CLIENT (Tizimning yashindek tez ishlashi siri)
+# Barcha xabarlar bitta ochiq kanal orqali ketadi (timeout 15 soniya qilib belgilandi)
+http_client = httpx.AsyncClient(timeout=15.0)
+
 # 📋 GIBRID DIAGNOSTIKA SAVOLLARI (10 TA)
 QUESTIONS = [
     {
@@ -112,48 +116,60 @@ QUESTIONS = [
     }
 ]
 
-# ⚡️ TELEGRAM API FUNKSIYALARI
+# ⚡️ YANGILANGAN TELEGRAM API FUNKSIYALARI (Xatolikdan himoyalangan)
 async def send_message(chat_id: int, text: str, reply_markup: dict = None):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
     if reply_markup:
         payload["reply_markup"] = reply_markup
-    async with httpx.AsyncClient() as client:
-        await client.post(url, json=payload)
+    try:
+        await http_client.post(url, json=payload)
+    except Exception as e:
+        print("Telegram Send Error:", e)
 
 async def edit_message(chat_id: int, message_id: int, text: str, reply_markup: dict = None):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageText"
     payload = {"chat_id": chat_id, "message_id": message_id, "text": text, "parse_mode": "HTML"}
     if reply_markup:
         payload["reply_markup"] = reply_markup
-    async with httpx.AsyncClient() as client:
-        await client.post(url, json=payload)
+    try:
+        await http_client.post(url, json=payload)
+    except Exception as e:
+        print("Telegram Edit Error:", e)
 
 async def send_document(chat_id: int, document_id: str, caption: str = ""):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
     payload = {"chat_id": chat_id, "document": document_id, "caption": caption, "parse_mode": "HTML"}
-    async with httpx.AsyncClient() as client:
-        await client.post(url, json=payload)
+    try:
+        await http_client.post(url, json=payload)
+    except Exception as e:
+        print("Telegram Document Error:", e)
 
 async def answer_callback(callback_id: str):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery"
-    async with httpx.AsyncClient() as client:
-        await client.post(url, json={"callback_query_id": callback_id})
+    try:
+        await http_client.post(url, json={"callback_query_id": callback_id})
+    except Exception as e:
+        pass # Bu xatolik botni to'xtatmasligi kerak
 
 # 🤖 WEBHOOK
 @app.post("/webhook")
 async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
-    data = await request.json()
+    try:
+        data = await request.json()
+    except:
+        return {"status": "ok"}
     
     if "message" in data:
         msg = data["message"]
-        chat_id = msg["chat"]["id"]
+        chat_id = msg.get("chat", {}).get("id")
+        if not chat_id:
+            return {"status": "ok"}
         
         if "text" in msg and msg["text"] == "/start":
             keyboard = {"keyboard": [[{"text": "🎯 Holatni aniqlash (1-bosqich)", "web_app": {"url": WEBAPP_URL}}]], "resize_keyboard": True}
             await send_message(chat_id, "👋 Assalomu alaykum!\nPastdagi tugmani bosib, dastlabki holatingizni aniqlang:", keyboard)
             
-        # 📁 PDF FAYL YUBORILGANDA ID'SINI OLISH UCHUN 
         elif "document" in msg:
             doc_id = msg["document"]["file_id"]
             doc_name = msg["document"].get("file_name", "Noma'lum fayl")
@@ -173,7 +189,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 keyboard = {"inline_keyboard": [[{"text": "🚀 Diagnostikani boshlash", "callback_data": "start_test"}]]}
                 await send_message(chat_id, success_text, keyboard)
             except Exception as e:
-                print("Xatolik:", e)
+                print("Xatolik WebApp:", e)
                 
     elif "callback_query" in data:
         cb = data["callback_query"]
@@ -182,6 +198,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         message_id = cb["message"]["message_id"]
         cb_data = cb["data"] 
         
+        # Tugmani to'xtatish xabari
         await answer_callback(cb_id)
         
         try:
@@ -197,11 +214,9 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     return {"status": "ok"}
                     
                 parts = cb_data.split("_")
-                step = int(parts[1])  # Bosilgan tugmadagi savol raqami
+                step = int(parts[1])  
                 opt_idx = int(parts[2])
                 
-                # 🛑 MANA SHU YERDA QOTISHNING OLDINI OLUCHI HIMOYA!
-                # Agar foydalanuvchi eski savolni bossa, funksiya shu yerda to'xtaydi
                 if step != user_test_state[chat_id]["step"]:
                     return {"status": "ok"}
                 
@@ -211,7 +226,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     user_test_state[chat_id]["profile_answers"].append(selected_val)
                     
                 next_step = step + 1
-                user_test_state[chat_id]["step"] = next_step  # Yangi qadamni saqlaymiz
+                user_test_state[chat_id]["step"] = next_step  
                 
                 if next_step < len(QUESTIONS):
                     q = QUESTIONS[next_step]
@@ -228,7 +243,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     counts = {"A": a_count, "B": b_count, "C": c_count, "D": d_count}
                     best_match = max(counts, key=counts.get)
                     
-                    # ⚠️ SHU YERGA O'ZINGIZ OLGAN FILE ID'LARNI QO'YASIZ (Botdan olingan kodlar)
+                    # ⚠️ O'ZINGIZNING FILE ID LARINGIZNI QO'YISHNI UNUTMANG
                     FILE_ID_DATA_ANALYST = "BQACAgIAAxkBAAOwan7zTn-jH74G3-uoa6v7fI8fkSkAAj2jAAIu8_lL-KgMfz4EPXc9BA" 
                     FILE_ID_UI_UX = "BQACAgIAAxkBAAOvan7zTu4kmza3yJ2eSapWATffmBUAAjyjAAIu8_lLBp31GHs8EDk9BA"
                     FILE_ID_PM = "BQACAgIAAxkBAAOuan7zTp0xQLGn7d3p1myTPcx1qhQAAjqjAAIu8_lLFn9n5sN8j8M9BA"
