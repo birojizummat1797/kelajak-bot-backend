@@ -150,11 +150,20 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         msg = data["message"]
         chat_id = msg["chat"]["id"]
         
+        # 1. /start bosilganda
         if "text" in msg and msg["text"] == "/start":
             keyboard = {"keyboard": [[{"text": "🎯 Holatni aniqlash (1-bosqich)", "web_app": {"url": WEBAPP_URL}}]], "resize_keyboard": True}
             await send_message(chat_id, "👋 Assalomu alaykum!\nPastdagi tugmani bosib, dastlabki holatingizni aniqlang:", keyboard)
             
+        # 📁 2. PDF FAYL YUBORILGANDA ID'SINI OLISH UCHUN (YANGI)
+        elif "document" in msg:
+            doc_id = msg["document"]["file_id"]
+            doc_name = msg["document"].get("file_name", "Noma'lum fayl")
+            await send_message(chat_id, f"✅ <b>{doc_name}</b> qabul qilindi!\n\nSizning FILE ID kodingiz:\n<code>{doc_id}</code>")
+            
+        # 3. Frontend'dan ma'lumot kelganda (WebApp)
         elif "web_app_data" in msg:
+        # elif "web_app_data" in msg:
             try:
                 raw_data = msg["web_app_data"]["data"]
                 parsed = json.loads(raw_data)
