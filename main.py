@@ -166,6 +166,9 @@ async def answer_callback(callback_id: str):
     except: pass
 
 # 🤖 WEBHOOK
+# ... Tepadagi savollar va gspread kodlari o'z o'rnida qoladi ...
+
+# 🤖 WEBHOOK
 @app.post("/webhook")
 async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
     try: data = await request.json()
@@ -185,11 +188,25 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             doc_name = msg["document"].get("file_name", "Noma'lum fayl")
             await send_message(chat_id, f"✅ <b>{doc_name}</b> qabul qilindi!\n\nSizning FILE ID kodingiz:\n<code>{doc_id}</code>")
             
+        # 🟢 MANA SHU YERDA RAQAM VA ISM BAZAGA SAQLANADI (Tog'rilandi)
         elif "web_app_data" in msg:
             try:
                 raw_data = msg["web_app_data"]["data"]
                 parsed = json.loads(raw_data)
+                
+                # Formaga kiritilgan ma'lumotlarni ajratib olamiz
                 name = parsed.get("name", "Noma'lum")
+                phone = parsed.get("phone", "Noma'lum") # Forma raqami ushlandi!
+                
+                # Neon bazaga yangilab yozib qo'yamiz
+                user = db.query(models.User).filter(models.User.telegram_id == str(chat_id)).first()
+                if not user:
+                    user = models.User(telegram_id=str(chat_id), full_name=name, phone_number=phone)
+                    db.add(user)
+                else:
+                    user.full_name = name
+                    user.phone_number = phone
+                db.commit()
                 
                 success_text = (
                     f"✅ Rahmat, <b>{name}</b>!\n\n"
@@ -202,6 +219,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 print("Xatolik WebApp:", e)
                 
     elif "callback_query" in data:
+# ... Kodning qolgan joylari o'zgarishsiz qoladi ...
         cb = data["callback_query"]
         cb_id = cb["id"]
         chat_id = cb["message"]["chat"]["id"]
