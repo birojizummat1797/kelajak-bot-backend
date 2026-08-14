@@ -135,7 +135,6 @@ async def send_document(chat_id: int, document_id: str, caption: str = ""):
     async with httpx.AsyncClient() as client:
         await client.post(url, json=payload)
 
-# 🚀 TUGMA QOTIB QOLMASLIGI UCHUN FUNKSIYA (Tezlik siri)
 async def answer_callback(callback_id: str):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery"
     async with httpx.AsyncClient() as client:
@@ -150,20 +149,17 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         msg = data["message"]
         chat_id = msg["chat"]["id"]
         
-        # 1. /start bosilganda
         if "text" in msg and msg["text"] == "/start":
             keyboard = {"keyboard": [[{"text": "🎯 Holatni aniqlash (1-bosqich)", "web_app": {"url": WEBAPP_URL}}]], "resize_keyboard": True}
             await send_message(chat_id, "👋 Assalomu alaykum!\nPastdagi tugmani bosib, dastlabki holatingizni aniqlang:", keyboard)
             
-        # 📁 2. PDF FAYL YUBORILGANDA ID'SINI OLISH UCHUN (YANGI)
+        # 📁 PDF FAYL YUBORILGANDA ID'SINI OLISH UCHUN 
         elif "document" in msg:
             doc_id = msg["document"]["file_id"]
             doc_name = msg["document"].get("file_name", "Noma'lum fayl")
             await send_message(chat_id, f"✅ <b>{doc_name}</b> qabul qilindi!\n\nSizning FILE ID kodingiz:\n<code>{doc_id}</code>")
             
-        # 3. Frontend'dan ma'lumot kelganda (WebApp)
         elif "web_app_data" in msg:
-        # elif "web_app_data" in msg:
             try:
                 raw_data = msg["web_app_data"]["data"]
                 parsed = json.loads(raw_data)
@@ -186,7 +182,6 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         message_id = cb["message"]["message_id"]
         cb_data = cb["data"] 
         
-        # ⚡️ TUGMANI DARHOL TO'XTATAMIZ (Bot yashindek tez ishlaydi)
         await answer_callback(cb_id)
         
         try:
@@ -202,22 +197,28 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     return {"status": "ok"}
                     
                 parts = cb_data.split("_")
-                step = int(parts[1])
+                step = int(parts[1])  # Bosilgan tugmadagi savol raqami
                 opt_idx = int(parts[2])
+                
+                # 🛑 MANA SHU YERDA QOTISHNING OLDINI OLUCHI HIMOYA!
+                # Agar foydalanuvchi eski savolni bossa, funksiya shu yerda to'xtaydi
+                if step != user_test_state[chat_id]["step"]:
+                    return {"status": "ok"}
+                
                 selected_val = QUESTIONS[step]["options"][opt_idx]["val"]
                 
                 if selected_val in ["A", "B", "C", "D"]:
                     user_test_state[chat_id]["profile_answers"].append(selected_val)
                     
                 next_step = step + 1
-                user_test_state[chat_id]["step"] = next_step
+                user_test_state[chat_id]["step"] = next_step  # Yangi qadamni saqlaymiz
                 
                 if next_step < len(QUESTIONS):
                     q = QUESTIONS[next_step]
                     keyboard = {"inline_keyboard": [[{"text": opt["text"], "callback_data": f"ans_{next_step}_{idx}"}] for idx, opt in enumerate(q["options"])]}
                     await edit_message(chat_id, message_id, q["text"], keyboard)
                     
-                else: # 10-SAVOLDAN KEYINGI HOLAT
+                else: 
                     profile = user_test_state[chat_id]["profile_answers"]
                     a_count = profile.count("A")
                     b_count = profile.count("B")
@@ -227,7 +228,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     counts = {"A": a_count, "B": b_count, "C": c_count, "D": d_count}
                     best_match = max(counts, key=counts.get)
                     
-                    # ⚠️ SHU YERGA O'ZINGIZ OLGAN ID'LARNI QO'YASIZ
+                    # ⚠️ SHU YERGA O'ZINGIZ OLGAN FILE ID'LARNI QO'YASIZ (Botdan olingan kodlar)
                     FILE_ID_DATA_ANALYST = "BQACAgIAAxkBAAOwan7zTn-jH74G3-uoa6v7fI8fkSkAAj2jAAIu8_lL-KgMfz4EPXc9BA" 
                     FILE_ID_UI_UX = "BQACAgIAAxkBAAOvan7zTu4kmza3yJ2eSapWATffmBUAAjyjAAIu8_lLBp31GHs8EDk9BA"
                     FILE_ID_PM = "BQACAgIAAxkBAAOuan7zTp0xQLGn7d3p1myTPcx1qhQAAjqjAAIu8_lLFn9n5sN8j8M9BA"
@@ -250,21 +251,19 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     result_text = (
                         f"🎉 <b>Diagnostika yakunlandi!</b>\n\n"
                         f"👉 Eng kuchli moslik: <b>{avatar}</b>\n\n"
-                        f"<i>Siz uchun Shaxsiy Yo'l Xaritasi (PDF) tayyorlandi!</i>"
+                        f"<i>Siz uchun Shaxsiy Yo'l Xaritasi (PDF) tayyorlandi! 👇</i>"
                     )
                     
                     await edit_message(chat_id, message_id, result_text)
                     
-                    # Agar Fayl ID ulanmagan bo'lsa xato bermasdan xabar yozadi
                     if file_to_send and file_to_send != "SHU_YERGA_FILE_ID_YOZILADI":
                         await send_document(chat_id, file_to_send, f"🔥 Sizning Shaxsiy Yo'l xaritangiz: {avatar}")
                     else:
-                        await send_message(chat_id, "⚠️ <i>(Eslatma: Hozircha PDF fayllar bazaga ulanmagan. Tizim sozlanmoqda.)</i>")
+                        await send_message(chat_id, "⚠️ <i>(Eslatma: Hozircha bu yo'nalish uchun PDF fayl tayyorlanmoqda.)</i>")
                     
                     del user_test_state[chat_id]
 
         except Exception as e:
             print("Callback Xatosi:", e)
-            await send_message(chat_id, "Kechirasiz, xatolik yuz berdi. Iltimos qaytadan /start bosing.")
 
     return {"status": "ok"}
