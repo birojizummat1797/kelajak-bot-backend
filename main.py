@@ -228,9 +228,9 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     best_match = max(counts, key=counts.get)
                     
                     # ⚠️ SHU YERGA O'ZINGIZ OLGAN ID'LARNI QO'YASIZ
-                    FILE_ID_DATA_ANALYST = "AgADPaMAAi7z-Us" 
-                    FILE_ID_UI_UX = "AgADPKMAAi7z-Us"
-                    FILE_ID_PM = "AgADOqMAAi7z-Us"
+                    FILE_ID_DATA_ANALYST = "BQACAgIAAxkBAAOwan7zTn-jH74G3-uoa6v7fI8fkSkAAj2jAAIu8_lL-KgMfz4EPXc9BA" 
+                    FILE_ID_UI_UX = "BQACAgIAAxkBAAOvan7zTu4kmza3yJ2eSapWATffmBUAAjyjAAIu8_lLBp31GHs8EDk9BA"
+                    FILE_ID_PM = "BQACAgIAAxkBAAOuan7zTp0xQLGn7d3p1myTPcx1qhQAAjqjAAIu8_lLFn9n5sN8j8M9BA"
                     
                     file_to_send = None
 
