@@ -277,57 +277,76 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     await edit_message(chat_id, message_id, q["text"], keyboard)
                     
                 else: 
+                    # Test yakunlandi, natijalarni hisoblaymiz
                     profile = user_test_state[chat_id]["profile_answers"]
-                    a_count = profile.count("A")
-                    b_count = profile.count("B")
-                    c_count = profile.count("C")
-                    d_count = profile.count("D")
                     
-                    counts = {"A": a_count, "B": b_count, "C": c_count, "D": d_count}
+                    # Faqat dastlabki 6 ta savoldan A,B,C,D ni hisoblaymiz (qolganlari CustDev va Monetize)
+                    answers_1_to_6 = profile[:6]
+                    counts = {
+                        "A": answers_1_to_6.count("A"), 
+                        "B": answers_1_to_6.count("B"), 
+                        "C": answers_1_to_6.count("C"), 
+                        "D": answers_1_to_6.count("D")
+                    }
                     best_match = max(counts, key=counts.get)
                     
-                    # ⚠️ O'ZINGIZNING FILE ID LARINGIZNI QO'YISHNI UNUTMANG
+                    # ⚠️ 5 TA PDF UCHUN FILE ID'LARNI SHU YERGA YOZING!
                     FILE_ID_DATA_ANALYST = "SHU_YERGA_FILE_ID_YOZILADI" 
+                    FILE_ID_FRONTEND = "SHU_YERGA_FILE_ID_YOZILADI"
                     FILE_ID_UI_UX = "SHU_YERGA_FILE_ID_YOZILADI"
                     FILE_ID_PM = "SHU_YERGA_FILE_ID_YOZILADI"
+                    FILE_ID_MARKETING = "SHU_YERGA_FILE_ID_YOZILADI"
                     
                     file_to_send = None
+                    avatar = ""
 
+                    # 🧠 MANTIQIY TAQSIMLASH (GPT PM TAVSIYASI ASOSIDA)
                     if best_match == "A":
-                        avatar = "💻 Data Analyst"
-                        file_to_send = FILE_ID_DATA_ANALYST
+                        if profile[0] == "A":  # 1-savolda kod tanlangan bo'lsa
+                            avatar = "💻 Frontend Developer"
+                            file_to_send = FILE_ID_FRONTEND
+                        else:
+                            avatar = "📊 Data Analyst"
+                            file_to_send = FILE_ID_DATA_ANALYST
+                            
                     elif best_match == "B":
-                        avatar = "🎨 UX/UI Designer"
+                        avatar = "🎨 UI/UX Designer"
                         file_to_send = FILE_ID_UI_UX
+                        
                     elif best_match == "C":
-                        avatar = "🗣 Project Manager"
+                        if profile[1] == "C":  # 2-savolda Biznes/Marketing tanlangan bo'lsa
+                            avatar = "📣 Digital Marketolog"
+                            file_to_send = FILE_ID_MARKETING
+                        else:
+                            avatar = "🗣 Project Manager"
+                            file_to_send = FILE_ID_PM
+                            
+                    elif best_match == "D":
+                        avatar = "📋 Project Manager" # D xarakter ham PM ga to'g'ri keladi
                         file_to_send = FILE_ID_PM
-                    else:
-                        avatar = "📋 Tizim va Tartib"
-                        file_to_send = None
                     
                     result_text = (
                         f"🎉 <b>Diagnostika yakunlandi!</b>\n\n"
-                        f"👉 Eng kuchli moslik: <b>{avatar}</b>\n\n"
-                        f"<i>Siz uchun Shaxsiy Yo'l Xaritasi (PDF) tayyorlandi! 👇</i>"
+                        f"👉 Sizning psixologik profilingizga mos yo'nalish: <b>{avatar}</b>\n\n"
+                        f"<i>Siz uchun tayyorlangan aniq qadamli Shaxsiy Yo'l Xaritasini (PDF) qabul qiling! 👇</i>"
                     )
                     
                     await edit_message(chat_id, message_id, result_text)
                     
                     if file_to_send and file_to_send != "SHU_YERGA_FILE_ID_YOZILADI":
-                        await send_document(chat_id, file_to_send, f"🔥 Sizning Shaxsiy Yo'l xaritangiz: {avatar}")
+                        await send_document(chat_id, file_to_send, f"🔥 Sizning Yo'l xaritangiz: {avatar}")
                     else:
-                        await send_message(chat_id, "⚠️ <i>(Eslatma: Hozircha bu yo'nalish uchun PDF fayl tayyorlanmoqda.)</i>")
+                        await send_message(chat_id, "⚠️ <i>(Eslatma: PDF fayl yuklanmagan, bot sozlanmoqda.)</i>")
                     
+                    # 📊 Google Sheets ga yozish (Ism, raqam, kasb nomi va to'lovga tayyorlik)
                     payment_intent = user_test_state[chat_id]["all_answers"].get(9, "Noma'lum")
                     user = db.query(models.User).filter(models.User.telegram_id == str(chat_id)).first()
                     u_name = user.full_name if user else "Noma'lum"
                     u_phone = user.phone_number if user else "Noma'lum"
                     
-                    # 1. Sheetsga yozamiz
                     asyncio.create_task(asyncio.to_thread(append_to_sheet, u_name, u_phone, avatar, payment_intent))
                     
-                    # 2. 🕒 SOTUV TAYMERINI ISHGA TUSHIRAMIZ (Orqa fonda)
+                    # 🕒 Sotuv xabari taymeri (60 soniya test uchun, keyin 24 soat qilinadi)
                     asyncio.create_task(send_followup_message(chat_id, u_name, avatar))
                     
                     del user_test_state[chat_id]
