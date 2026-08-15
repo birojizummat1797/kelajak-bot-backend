@@ -15,7 +15,10 @@ from database import engine, get_db
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-WEBAPP_URL = "https://kelajak-bot-frontend.vercel.app" 
+
+# --- WEBAPP LINKLARI ---
+WEBAPP_URL = "https://kelajak-bot-frontend.vercel.app" # Bepul test linki
+PREMIUM_WEBAPP_URL = "https://premium-diagnostic.vercel.app/" # DIQQAT: Shu yerga Premium Next.js linki qo'yiladi!
 
 # Google Sheets sozlamalari
 SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
@@ -26,7 +29,7 @@ app = FastAPI()
 user_test_state = {}
 http_client = httpx.AsyncClient(timeout=15.0)
 
-# 📋 GIBRID DIAGNOSTIKA SAVOLLARI (10 TA)
+# 📋 GIBRID DIAGNOSTIKA SAVOLLARI (10 TA - Eski bepul versiya uchun)
 QUESTIONS = [
     {
         "text": "<b>1-savol:</b> Bo'sh vaqtingizda oldingizda 4 ta loyiha turibdi. Qaysi birini tanlaysiz?",
@@ -140,7 +143,6 @@ def append_to_sheet(name, phone, result_text, payment_intent, all_answers):
         
         # 10 ta savolning javoblarini qatorga qo'shib chiqamiz
         for i in range(10):
-            # Agar javob bo'lsa, faqat matn qismini yozamiz
             answer_text = all_answers.get(i, "Javob berilmagan")
             row_data.append(answer_text)
             
@@ -177,18 +179,14 @@ async def answer_callback(callback_id: str):
 
 # 🕒 AVTOMATIK SOTUV XABARI (FOLLOW-UP TAYMER)
 async def send_followup_message(chat_id: int, name: str, avatar: str):
-    # 12 soat kutish (12 soat * 60 daqiqa * 60 soniya = 43200 soniya)
     await asyncio.sleep(43200) 
-    
     text = (
         f"Assalomu alaykum, <b>{name}</b>! Siz o'zingizga mos bo'lgan <b>{avatar}</b> yo'l xaritasini yuklab olgan edingiz.\n\n"
         f"O'qib chiqdingizmi? Fikrlaringiz qanday?\n\n"
         f"🚀 Agar bu yo'lni o'zingiz yolg'iz, xatolar qilib bosib o'tishni istamasangiz, bizning professional mentorlar bilan 100% amaliyotga asoslangan maxsus tizimimizga yoziling!\n\n"
         f"👉 <i>O'z kelajagingizga sarmoya kiritish va bepul konsultatsiya olish uchun quyidagi tugmani bosing:</i>"
     )
-    
     keyboard = {"inline_keyboard": [[{"text": "📞 Mutaxassis bilan bog'lanish", "url": "https://t.me/ulugbek_aliboyev"}]]}
-    
     await send_message(chat_id, text, keyboard)
     print(f"Follow-up xabari 12 soatdan so'ng yuborildi: {name}")
 
@@ -204,8 +202,15 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         if not chat_id: return {"status": "ok"}
         
         if "text" in msg and msg["text"] == "/start":
-            keyboard = {"keyboard": [[{"text": "🎯 Holatni aniqlash (1-bosqich)", "web_app": {"url": WEBAPP_URL}}]], "resize_keyboard": True}
-            await send_message(chat_id, "👋 Assalomu alaykum!\nPastdagi tugmani bosib, dastlabki holatingizni aniqlang:", keyboard)
+            # GIBRID MENYU: BEPUL VA PREMIUM WEBAPPLAR BIRGA
+            keyboard = {
+                "keyboard": [
+                    [{"text": "🎯 Bepul Diagnostika (1-bosqich)", "web_app": {"url": WEBAPP_URL}}],
+                    [{"text": "💎 Premium Diagnostika (DeepTech)", "web_app": {"url": PREMIUM_WEBAPP_URL}}]
+                ], 
+                "resize_keyboard": True
+            }
+            await send_message(chat_id, "👋 Assalomu alaykum!\n\nQaysi turdagi diagnostikadan o'tishni xohlaysiz? Quyidagi tugmalardan birini tanlang:", keyboard)
             
         elif "document" in msg:
             doc_id = msg["document"]["file_id"]
@@ -217,6 +222,21 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 raw_data = msg["web_app_data"]["data"]
                 parsed = json.loads(raw_data)
                 
+                # --- PREMIUM DIAGNOSTIKA TARMOG'I ---
+                if parsed.get("action") == "diagnostics_completed":
+                    premium_data = parsed.get("data", {})
+                    print(f"[{chat_id}] Premium ma'lumot keldi: {premium_data}")
+                    
+                    success_text = (
+                        "✅ <b>Premium Diagnostika xulosangiz qabul qilindi!</b>\n\n"
+                        "Sun'iy intellekt dvigateli tahlilni boshladi. Barcha sirlar ochib berilgan 20 sahifalik <b>Shaxsiy Yo'l xaritangizni (Premium PDF)</b> "
+                        "yuklab olish uchun quyidagi tugma orqali to'lovni amalga oshiring:"
+                    )
+                    pay_keyboard = {"inline_keyboard": [[{"text": "💳 To'lov qilish (99,000 UZS)", "callback_data": "pay_premium"}]]}
+                    await send_message(chat_id, success_text, pay_keyboard)
+                    return {"status": "ok"}
+
+                # --- BEPUL DIAGNOSTIKA TARMOG'I (Eski mantiq) ---
                 name = parsed.get("name", "Noma'lum")
                 phone = parsed.get("phone", "Noma'lum") 
                 
@@ -249,6 +269,11 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         await answer_callback(cb_id)
         
         try:
+            # Vaqtincha Premium to'lov tugmasini ushlab olish
+            if cb_data == "pay_premium":
+                await send_message(chat_id, "<i>To'lov tizimi (Click/Payme) integratsiyasi jarayonida... Tez orada ishga tushadi!</i>")
+                return {"status": "ok"}
+
             if cb_data == "start_test":
                 user_test_state[chat_id] = {"step": 0, "profile_answers": [], "all_answers": {}}
                 q = QUESTIONS[0]
@@ -284,10 +309,8 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     await edit_message(chat_id, message_id, q["text"], keyboard)
                     
                 else: 
-                    # Test yakunlandi, natijalarni hisoblaymiz
                     profile = user_test_state[chat_id]["profile_answers"]
                     
-                    # Faqat dastlabki 6 ta savoldan A,B,C,D ni hisoblaymiz
                     answers_1_to_6 = profile[:6]
                     counts = {
                         "A": answers_1_to_6.count("A"), 
@@ -296,11 +319,9 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                         "D": answers_1_to_6.count("D")
                     }
                     
-                    # Eng yuqori balni topamiz
                     max_score = max(counts.values())
                     best_match = max(counts, key=counts.get)
                     
-                    # 🛑 HALOLLIK FILTRI (Javoblar aralashib ketsa)
                     if max_score < 3:
                         result_text = (
                             "⚠️ <b>Natija noaniq!</b>\n\n"
@@ -310,11 +331,8 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                         )
                         await edit_message(chat_id, message_id, result_text)
                         del user_test_state[chat_id]
-                        return {"status": "ok"} # Shu yerdan jarayon to'xtaydi
+                        return {"status": "ok"} 
 
-                    # --------------------------------------------------------
-                    # Agar javoblar aniq bo'lsa, davom etamiz
-                    
                     FILE_ID_DATA_ANALYST = "BQACAgIAAxkBAAOwan7zTn-jH74G3-uoa6v7fI8fkSkAAj2jAAIu8_lL-KgMfz4EPXc9BA" 
                     FILE_ID_FRONTEND = "BQACAgIAAxkBAAPman8Ri4JydeXrEseHOtMifLE-QxkAAjuhAAIvCflL7-iehFTROt89BA"
                     FILE_ID_UI_UX = "BQACAgIAAxkBAAOvan7zTu4kmza3yJ2eSapWATffmBUAAjyjAAIu8_lLBp31GHs8EDk9BA"
@@ -324,9 +342,8 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     file_to_send = None
                     avatar = ""
 
-                    # 🧠 MANTIQIY TAQSIMLASH (GPT PM TAVSIYASI ASOSIDA)
                     if best_match == "A":
-                        if profile[0] == "A":  # 1-savolda kod tanlangan bo'lsa
+                        if profile[0] == "A":  
                             avatar = "💻 Frontend Developer"
                             file_to_send = FILE_ID_FRONTEND
                         else:
@@ -338,7 +355,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                         file_to_send = FILE_ID_UI_UX
                         
                     elif best_match == "C":
-                        if profile[1] == "C":  # 2-savolda Biznes/Marketing tanlangan bo'lsa
+                        if profile[1] == "C":  
                             avatar = "📣 Digital Marketolog"
                             file_to_send = FILE_ID_MARKETING
                         else:
@@ -346,7 +363,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                             file_to_send = FILE_ID_PM
                             
                     elif best_match == "D":
-                        avatar = "📋 Project Manager" # D xarakter ham PM ga to'g'ri keladi
+                        avatar = "📋 Project Manager" 
                         file_to_send = FILE_ID_PM
                     
                     result_text = (
@@ -362,17 +379,14 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     else:
                         await send_message(chat_id, "⚠️ <i>(Eslatma: PDF fayl yuklanmagan, bot sozlanmoqda.)</i>")
                     
-                    # 📊 Google Sheets ga yozish (Ism, raqam, kasb nomi va to'lovga tayyorlik)
                     payment_intent = user_test_state[chat_id]["all_answers"].get(9, "Noma'lum")
                     user = db.query(models.User).filter(models.User.telegram_id == str(chat_id)).first()
                     u_name = user.full_name if user else "Noma'lum"
                     u_phone = user.phone_number if user else "Noma'lum"
                     
-                    # Jadvalga to'liq uzatish (Barcha javoblar bilan birga)
                     user_all_answers = user_test_state[chat_id].get("all_answers", {})
                     asyncio.create_task(asyncio.to_thread(append_to_sheet, u_name, u_phone, avatar, payment_intent, user_all_answers))
                     
-                    # 🕒 Sotuv xabari taymeri (60 soniya test uchun, keyin 24 soat qilinadi)
                     asyncio.create_task(send_followup_message(chat_id, u_name, avatar))
                     
                     del user_test_state[chat_id]
