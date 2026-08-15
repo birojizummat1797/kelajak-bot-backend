@@ -177,22 +177,20 @@ async def answer_callback(callback_id: str):
 
 # 🕒 AVTOMATIK SOTUV XABARI (FOLLOW-UP TAYMER)
 async def send_followup_message(chat_id: int, name: str, avatar: str):
-    # DIQQAT: Hozir test qilish uchun 60 soniya (1 daqiqa) qilingan. 
-    # Haqiqiy mijozlar uchun buni 86400 (24 soat) ga o'zgartiramiz!
-    await asyncio.sleep(60) 
+    # 12 soat kutish (12 soat * 60 daqiqa * 60 soniya = 43200 soniya)
+    await asyncio.sleep(43200) 
     
     text = (
-        f"Assalomu alaykum, <b>{name}</b>! Kecha o'zingizga mos bo'lgan <b>{avatar}</b> yo'l xaritasini yuklab olgan edingiz.\n\n"
+        f"Assalomu alaykum, <b>{name}</b>! Siz o'zingizga mos bo'lgan <b>{avatar}</b> yo'l xaritasini yuklab olgan edingiz.\n\n"
         f"O'qib chiqdingizmi? Fikrlaringiz qanday?\n\n"
         f"🚀 Agar bu yo'lni o'zingiz yolg'iz, xatolar qilib bosib o'tishni istamasangiz, bizning professional mentorlar bilan 100% amaliyotga asoslangan maxsus tizimimizga yoziling!\n\n"
         f"👉 <i>O'z kelajagingizga sarmoya kiritish va bepul konsultatsiya olish uchun quyidagi tugmani bosing:</i>"
     )
     
-    # "Sizning_Sotuvchingiz" degan joyga o'z profilingizni yoki sotuvchingizni userneymini yozing (Masalan: ulugbek_admin)
     keyboard = {"inline_keyboard": [[{"text": "📞 Mutaxassis bilan bog'lanish", "url": "https://t.me/ulugbek_aliboyev"}]]}
     
     await send_message(chat_id, text, keyboard)
-    print(f"Follow-up xabari yuborildi: {name}")
+    print(f"Follow-up xabari 12 soatdan so'ng yuborildi: {name}")
 
 # 🤖 WEBHOOK
 @app.post("/webhook")
