@@ -223,16 +223,22 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 parsed = json.loads(raw_data)
                 
                 # --- PREMIUM DIAGNOSTIKA TARMOG'I ---
+                # --- PREMIUM DIAGNOSTIKA TARMOG'I ---
                 if parsed.get("action") == "diagnostics_completed":
                     premium_data = parsed.get("data", {})
                     print(f"[{chat_id}] Premium ma'lumot keldi: {premium_data}")
                     
+                    # WebApp yopilgach botda chiqadigan chiroyli xabar
                     success_text = (
-                        "✅ <b>Premium Diagnostika xulosangiz qabul qilindi!</b>\n\n"
-                        "Sun'iy intellekt dvigateli tahlilni boshladi. Barcha sirlar ochib berilgan 20 sahifalik <b>Shaxsiy Yo'l xaritangizni (Premium PDF)</b> "
-                        "yuklab olish uchun quyidagi tugma orqali to'lovni amalga oshiring:"
+                        "✅ <b>Premium Diagnostika muvaffaqiyatli yakunlandi!</b>\n\n"
+                        "Sun'iy intellekt ma'lumotlaringizni qabul qildi va tahlilni tugatdi. "
+                        "Barcha sirlar ochib berilgan 20 sahifalik <b>Shaxsiy Yo'l xaritangizni (Premium PDF)</b> "
+                        "yuklab olish uchun quyidagi tugma orqali to'lovni amalga oshiring 👇"
                     )
-                    pay_keyboard = {"inline_keyboard": [[{"text": "💳 To'lov qilish (99,000 UZS)", "callback_data": "pay_premium"}]]}
+                    
+                    # Frontenddagi narx bilan bir xil summaga o'zgartiring
+                    pay_keyboard = {"inline_keyboard": [[{"text": "💳 To'lov qilish (49,000 UZS)", "callback_data": "pay_premium"}]]}
+                    
                     await send_message(chat_id, success_text, pay_keyboard)
                     return {"status": "ok"}
 
