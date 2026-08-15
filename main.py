@@ -120,8 +120,8 @@ QUESTIONS = [
     }
 ]
 
-# 📝 GOOGLE JADVALGA YOZISH FUNKSIYASI
-def append_to_sheet(name, phone, result_text, payment_intent):
+# 📝 GOOGLE JADVALGA YOZISH FUNKSIYASI (Kengaytirilgan)
+def append_to_sheet(name, phone, result_text, payment_intent, all_answers):
     try:
         if not CREDS_JSON or not SHEET_ID:
             print("Google kalitlari topilmadi!")
@@ -134,8 +134,18 @@ def append_to_sheet(name, phone, result_text, payment_intent):
         sheet = client.open_by_key(SHEET_ID).sheet1
         
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        sheet.append_row([now, name, phone, result_text, payment_intent])
-        print(f"Jadvalga yozildi: {name}")
+        
+        # Asosiy ma'lumotlar
+        row_data = [now, name, phone, result_text, payment_intent]
+        
+        # 10 ta savolning javoblarini qatorga qo'shib chiqamiz
+        for i in range(10):
+            # Agar javob bo'lsa, faqat matn qismini yozamiz
+            answer_text = all_answers.get(i, "Javob berilmagan")
+            row_data.append(answer_text)
+            
+        sheet.append_row(row_data)
+        print(f"Jadvalga to'liq yozildi: {name}")
     except Exception as e:
         print(f"Google Sheets xatosi: {e}")
 
@@ -183,7 +193,6 @@ async def send_followup_message(chat_id: int, name: str, avatar: str):
     
     await send_message(chat_id, text, keyboard)
     print(f"Follow-up xabari yuborildi: {name}")
-
 
 # 🤖 WEBHOOK
 @app.post("/webhook")
@@ -306,9 +315,8 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                         return {"status": "ok"} # Shu yerdan jarayon to'xtaydi
 
                     # --------------------------------------------------------
-                    # Agar javoblar aniq bo'lsa, davom etamiz (Eski kodingiz)
+                    # Agar javoblar aniq bo'lsa, davom etamiz
                     
-                    # ⚠️ 5 TA PDF UCHUN FILE ID'LARNI SHU YERGA YOZING!
                     FILE_ID_DATA_ANALYST = "BQACAgIAAxkBAAOwan7zTn-jH74G3-uoa6v7fI8fkSkAAj2jAAIu8_lL-KgMfz4EPXc9BA" 
                     FILE_ID_FRONTEND = "BQACAgIAAxkBAAPman8Ri4JydeXrEseHOtMifLE-QxkAAjuhAAIvCflL7-iehFTROt89BA"
                     FILE_ID_UI_UX = "BQACAgIAAxkBAAOvan7zTu4kmza3yJ2eSapWATffmBUAAjyjAAIu8_lLBp31GHs8EDk9BA"
@@ -362,7 +370,9 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     u_name = user.full_name if user else "Noma'lum"
                     u_phone = user.phone_number if user else "Noma'lum"
                     
-                    asyncio.create_task(asyncio.to_thread(append_to_sheet, u_name, u_phone, avatar, payment_intent))
+                    # Jadvalga to'liq uzatish (Barcha javoblar bilan birga)
+                    user_all_answers = user_test_state[chat_id].get("all_answers", {})
+                    asyncio.create_task(asyncio.to_thread(append_to_sheet, u_name, u_phone, avatar, payment_intent, user_all_answers))
                     
                     # 🕒 Sotuv xabari taymeri (60 soniya test uchun, keyin 24 soat qilinadi)
                     asyncio.create_task(send_followup_message(chat_id, u_name, avatar))
