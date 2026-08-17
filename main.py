@@ -7,6 +7,9 @@ from fastapi import FastAPI, Request, Depends
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 
+from ai_engine import analyze_user_profile
+from pdf_generator import create_personal_roadmap # SHU QATOR QO'SHILDI
+
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -223,23 +226,39 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 parsed = json.loads(raw_data)
                 
                 # --- PREMIUM DIAGNOSTIKA TARMOG'I ---
-                # --- PREMIUM DIAGNOSTIKA TARMOG'I ---
                 if parsed.get("action") == "diagnostics_completed":
                     premium_data = parsed.get("data", {})
-                    print(f"[{chat_id}] Premium ma'lumot keldi: {premium_data}")
+                    name = premium_data.get("goal", {}).get("name", "Lider") # WebApp'dan ism kelmasa, standart ism
                     
-                    # WebApp yopilgach botda chiqadigan chiroyli xabar
-                    success_text = (
-                        "✅ <b>Premium Diagnostika muvaffaqiyatli yakunlandi!</b>\n\n"
-                        "Sun'iy intellekt ma'lumotlaringizni qabul qildi va tahlilni tugatdi. "
-                        "Barcha sirlar ochib berilgan 20 sahifalik <b>Shaxsiy Yo'l xaritangizni (Premium PDF)</b> "
-                        "yuklab olish uchun quyidagi tugma orqali to'lovni amalga oshiring 👇"
+                    print(f"[{chat_id}] Premium ma'lumot keldi, AI tahlil boshlandi...")
+                    
+                    # 1. Kuttirish xabari
+                    wait_msg = await send_message(chat_id, "⏳ <i>Sun'iy intellekt sizning ma'lumotlaringizni 100+ kasblar bazasi bilan solishtirmoqda. Iltimos, kuting...</i>")
+                    
+                    # 2. AI dan tahlilni olish
+                    ai_analysis = await analyze_user_profile(premium_data)
+                    
+                    # 3. PDF faylni generatsiya qilish (Yaratish)
+                    pdf_path = create_personal_roadmap(chat_id, name, ai_analysis)
+                    
+                    # 4. Mijozga tayyor PDF ni yuborish
+                    caption_text = (
+                        "🎉 <b>Tahlil muvaffaqiyatli yakunlandi!</b>\n\n"
+                        "Sun'iy intellekt sizning psixologik profilingiz va imkoniyatlaringizni tahlil qilib, "
+                        "siz uchun maxsus <b>Shaxsiy Yo'l Xaritasini</b> ishlab chiqdi.\n\n"
+                        "👇 <i>Faylni yuklab oling va o'z kelajagingiz sari birinchi qadamni tashlang!</i>"
                     )
                     
-                    # Frontenddagi narx bilan bir xil summaga o'zgartiring
-                    pay_keyboard = {"inline_keyboard": [[{"text": "💳 To'lov qilish (49,000 UZS)", "callback_data": "pay_premium"}]]}
+                    # Hujjatni yuboramiz
+                    await send_document(chat_id, document_id=pdf_path, caption=caption_text)
                     
-                    await send_message(chat_id, success_text, pay_keyboard)
+                    # 5. Yuborib bo'lingach, serverdagi vaqtinchalik PDF faylni o'chirib tashlash (xotira to'lmasligi uchun)
+                    try:
+                        import os
+                        os.remove(pdf_path)
+                    except Exception as e:
+                        print(f"Faylni o'chirishda xatolik: {e}")
+                        
                     return {"status": "ok"}
 
                 # --- BEPUL DIAGNOSTIKA TARMOG'I (Eski mantiq) ---
