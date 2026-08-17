@@ -227,6 +227,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 
                 # --- PREMIUM DIAGNOSTIKA TARMOG'I ---
                 # --- PREMIUM DIAGNOSTIKA TARMOG'I ---
+                # --- PREMIUM DIAGNOSTIKA TARMOG'I ---
                 if parsed.get("action") == "diagnostics_completed":
                     premium_data = parsed.get("data", {})
                     name = premium_data.get("goal", {}).get("name", "Lider") 
@@ -240,18 +241,31 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     print(f"[{chat_id}] 3. AI dan javob keldi! PDF infografika yasalmoqda...")
                     pdf_path = create_personal_roadmap(chat_id, name, ai_analysis)
                     
-                    print(f"[{chat_id}] 4. PDF tayyorlandi: {pdf_path}. Telegramga jo'natilmoqda...")
+                    print(f"[{chat_id}] 4. PDF tayyor! Telegram serverlariga HAQIQIY yuklash boshlandi...")
                     
                     caption_text = (
                         "🎉 <b>Tahlil muvaffaqiyatli yakunlandi!</b>\n\n"
                         "👇 <i>Faylni yuklab oling va o'z kelajagingiz sari birinchi qadamni tashlang!</i>"
                     )
                     
-                    await send_document(chat_id, document_id=pdf_path, caption=caption_text)
-                    print(f"[{chat_id}] 5. PDF muvaffaqiyatli yuborildi! Xotira tozalanmoqda...")
+                    # 100% KAFOLATLANGAN FAYL YUKLASH USULI
+                    import os
+                    import httpx
+                    BOT_TOKEN = os.getenv("BOT_TOKEN")
+                    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
                     
                     try:
-                        import os
+                        async with httpx.AsyncClient() as client:
+                            with open(pdf_path, "rb") as pdf_file:
+                                files = {"document": (f"Yol_Xaritasi.pdf", pdf_file, "application/pdf")}
+                                data = {"chat_id": chat_id, "caption": caption_text, "parse_mode": "HTML"}
+                                tg_response = await client.post(url, data=data, files=files)
+                                print(f"[{chat_id}] Telegram javobi: {tg_response.json()}")
+                    except Exception as e:
+                        print(f"[{chat_id}] Telegramga yuklashda xatolik: {e}")
+                    
+                    print(f"[{chat_id}] 5. Jarayon tugadi. Xotira tozalanmoqda...")
+                    try:
                         os.remove(pdf_path)
                     except Exception as e:
                         print(f"Faylni o'chirishda xatolik: {e}")
