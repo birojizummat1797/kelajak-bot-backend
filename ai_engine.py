@@ -43,7 +43,7 @@ async def analyze_user_profile(user_data: dict) -> dict:
         # YANGI USUL: client.models orqali murojaat qilish
         response = await asyncio.to_thread(
             client.models.generate_content,
-            model='gemini-2.5-flash', # Model nomini o'zingiz xohlaganga o'zgartirishingiz mumkin
+            model='gemini-3.6-flash', # Model nomini o'zingiz xohlaganga o'zgartirishingiz mumkin
             contents=prompt
         )
         result_text = response.text.strip()
