@@ -44,7 +44,7 @@ async def analyze_user_profile(user_data: dict) -> dict:
     
     try:
         # Eng yangi va tezkor modelni tanlaymiz
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-3.6-flash')
         
         # Asinxron tarzda AI ga so'rov yuborish
         response = await asyncio.to_thread(model.generate_content, prompt)
