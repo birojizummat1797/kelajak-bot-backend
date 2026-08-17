@@ -41,11 +41,19 @@ async def analyze_user_profile(user_data: dict) -> dict:
     
     try:
         # YANGI USUL: client.models orqali murojaat qilish
-        response = await asyncio.to_thread(
-            client.models.generate_content,
-            model='gemini-3.6-flash', # Model nomini o'zingiz xohlaganga o'zgartirishingiz mumkin
+        # response = await asyncio.to_thread(
+        #     client.models.generate_content,
+        #     model='gemini-3.6-flash', # Model nomini o'zingiz xohlaganga o'zgartirishingiz mumkin
+        #     contents=prompt
+        # )
+
+        # YANGI USUL: Asinxron ishlashi uchun client.aio.models ishlatamiz
+        # Va eng barqaror gemini-1.5-flash modelini qo'yamiz
+        response = await client.aio.models.generate_content(
+            model='gemini-1.5-flash', 
             contents=prompt
         )
+
         result_text = response.text.strip()
         
         if result_text.startswith("```json"):

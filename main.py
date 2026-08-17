@@ -226,33 +226,30 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 parsed = json.loads(raw_data)
                 
                 # --- PREMIUM DIAGNOSTIKA TARMOG'I ---
+                # --- PREMIUM DIAGNOSTIKA TARMOG'I ---
                 if parsed.get("action") == "diagnostics_completed":
                     premium_data = parsed.get("data", {})
-                    name = premium_data.get("goal", {}).get("name", "Lider") # WebApp'dan ism kelmasa, standart ism
+                    name = premium_data.get("goal", {}).get("name", "Lider") 
                     
-                    print(f"[{chat_id}] Premium ma'lumot keldi, AI tahlil boshlandi...")
+                    print(f"[{chat_id}] 1. Premium ma'lumot keldi. Kuttirish xabari yuborilmoqda...")
+                    wait_msg = await send_message(chat_id, "⏳ <i>Sun'iy intellekt ma'lumotlaringizni tahlil qilmoqda...</i>")
                     
-                    # 1. Kuttirish xabari
-                    wait_msg = await send_message(chat_id, "⏳ <i>Sun'iy intellekt sizning ma'lumotlaringizni 100+ kasblar bazasi bilan solishtirmoqda. Iltimos, kuting...</i>")
-                    
-                    # 2. AI dan tahlilni olish
+                    print(f"[{chat_id}] 2. AI dvigatelga so'rov ketdi. Kutyapmiz...")
                     ai_analysis = await analyze_user_profile(premium_data)
                     
-                    # 3. PDF faylni generatsiya qilish (Yaratish)
+                    print(f"[{chat_id}] 3. AI dan javob keldi! PDF infografika yasalmoqda...")
                     pdf_path = create_personal_roadmap(chat_id, name, ai_analysis)
                     
-                    # 4. Mijozga tayyor PDF ni yuborish
+                    print(f"[{chat_id}] 4. PDF tayyorlandi: {pdf_path}. Telegramga jo'natilmoqda...")
+                    
                     caption_text = (
                         "🎉 <b>Tahlil muvaffaqiyatli yakunlandi!</b>\n\n"
-                        "Sun'iy intellekt sizning psixologik profilingiz va imkoniyatlaringizni tahlil qilib, "
-                        "siz uchun maxsus <b>Shaxsiy Yo'l Xaritasini</b> ishlab chiqdi.\n\n"
                         "👇 <i>Faylni yuklab oling va o'z kelajagingiz sari birinchi qadamni tashlang!</i>"
                     )
                     
-                    # Hujjatni yuboramiz
                     await send_document(chat_id, document_id=pdf_path, caption=caption_text)
+                    print(f"[{chat_id}] 5. PDF muvaffaqiyatli yuborildi! Xotira tozalanmoqda...")
                     
-                    # 5. Yuborib bo'lingach, serverdagi vaqtinchalik PDF faylni o'chirib tashlash (xotira to'lmasligi uchun)
                     try:
                         import os
                         os.remove(pdf_path)
