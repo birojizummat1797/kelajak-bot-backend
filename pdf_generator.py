@@ -1,31 +1,35 @@
 import os
+import re # <-- Zirhli filtrimiz uchun yadroviy kutubxona
 from fpdf import FPDF
 
 def clean_text(text):
-    """PDF qulamangligi uchun matnlarni filtrdan o'tkazamiz (XATO TO'G'RILANDI)"""
+    """PDF qulamangligi uchun matnlarni filtrdan o'tkazamiz va kesamiz"""
     if not text: return ""
-    # \n (yangi qator) belgilarini saqlab qolamiz, faqat g'alati chiziqchalarni tozalaymiz
-    return str(text).replace("–", "-").replace("—", "-").replace("’", "'").replace("‘", "'").replace("“", '"').replace("”", '"').replace("`", "'")
+    text = str(text).replace("–", "-").replace("—", "-").replace("’", "'").replace("‘", "'").replace("“", '"').replace("”", '"').replace("`", "'")
+    
+    # 1-ZIRH: AI yuborishi mumkin bo'lgan o'ta uzun chiziqlarni (---, ===) bitta belgiga qisqartiramiz
+    text = re.sub(r'[-_=*~]{4,}', '-', text)
+    
+    # 2-ZIRH: FPDF ni qulatadigan "bitta probelsiz" o'ta uzun so'zlarni (40 ta harfdan oshsa) majburlab bo'lib yuboramiz
+    text = re.sub(r'([^\s]{40})', r'\1 ', text)
+    
+    return text
 
 class PremiumPDF(FPDF):
     def header(self):
-        # Zamonaviy To'q Ko'k (Navy Blue) fon - Ishonch va xotirjamlik
         self.set_fill_color(10, 25, 47)
         self.rect(0, 0, 210, 30, 'F')
         
-        # Yorqin Feruza (Teal) sarlavha - Zamonaviy texnologiyalar rangi
         self.set_font("helvetica", "B", 18)
         self.set_text_color(100, 255, 218)
         self.cell(0, 10, "KARYERA YO'L XARITASI", border=0, ln=1, align="C")
         
-        # Oq-kumush ost-sarlavha
         self.set_font("helvetica", "I", 10)
         self.set_text_color(204, 214, 246)
         self.cell(0, 5, "DeepTech Premium Diagnostika Xulosasi", border=0, ln=1, align="C")
         self.ln(10)
 
     def footer(self):
-        # Kumush rangli alt-kolontitul
         self.set_y(-15)
         self.set_font("helvetica", "I", 8)
         self.set_text_color(136, 146, 176)
@@ -36,6 +40,9 @@ def create_personal_roadmap(chat_id: int, user_name: str, ai_data: dict) -> str:
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     
+    # 3-ZIRH: Dinamik sahifa kengligini oldindan hisoblab, FPDF aqlini chalg'itmaymiz
+    epw = pdf.epw 
+    
     psycho = ai_data.get("psychological_profile", {})
     careers = ai_data.get("careers", {})
     top_match = careers.get("top_match", {})
@@ -43,16 +50,14 @@ def create_personal_roadmap(chat_id: int, user_name: str, ai_data: dict) -> str:
     finance = ai_data.get("financial_forecast", {})
     tips = ai_data.get("pro_tips", [])
     
-    # --- 1. KIRISH VA PSIXOLOGIK PORTRET ---
     pdf.set_font("helvetica", "B", 20)
-    pdf.set_text_color(10, 25, 47) # To'q ko'k matn
+    pdf.set_text_color(10, 25, 47) 
     pdf.cell(0, 15, clean_text(f"Hurmatli {user_name},"), ln=1)
     
     pdf.set_font("helvetica", "", 12)
     pdf.set_text_color(50, 50, 50)
-    pdf.multi_cell(0, 8, clean_text("Sizning javoblaringiz asosida chuqur psixologik va professional tahlil o'tkazildi. Sizning yashirin qobiliyatlaringiz: \n"))
+    pdf.multi_cell(epw, 8, clean_text("Sizning javoblaringiz asosida chuqur psixologik va professional tahlil o'tkazildi. Sizning yashirin qobiliyatlaringiz: \n"))
     
-    # Psixologik blok (Och ko'k fon)
     pdf.set_fill_color(230, 241, 255)
     pdf.set_font("helvetica", "B", 14)
     pdf.set_text_color(10, 25, 47)
@@ -63,11 +68,10 @@ def create_personal_roadmap(chat_id: int, user_name: str, ai_data: dict) -> str:
     pdf.set_font("helvetica", "", 12)
     pdf.cell(0, 8, clean_text(psycho.get("archetype", "Noma'lum")), ln=1)
     
-    pdf.multi_cell(0, 8, clean_text(f"Super Kuchingiz: {psycho.get('super_power', 'Ma\'lumot yo\'q')}"))
-    pdf.multi_cell(0, 8, clean_text(f"Rivojlantirish kerak: {psycho.get('growth_area', 'Ma\'lumot yo\'q')}"))
+    pdf.multi_cell(epw, 8, clean_text(f"Super Kuchingiz: {psycho.get('super_power', 'Ma\'lumot yo\'q')}"))
+    pdf.multi_cell(epw, 8, clean_text(f"Rivojlantirish kerak: {psycho.get('growth_area', 'Ma\'lumot yo\'q')}"))
     pdf.ln(5)
 
-    # --- 2. ASOSIY KASB (Feruza fon, To'q matn) ---
     pdf.set_fill_color(100, 255, 218) 
     pdf.set_text_color(10, 25, 47) 
     pdf.set_font("helvetica", "B", 14)
@@ -78,18 +82,17 @@ def create_personal_roadmap(chat_id: int, user_name: str, ai_data: dict) -> str:
     
     pdf.set_font("helvetica", "", 12)
     pdf.set_text_color(50, 50, 50)
-    pdf.multi_cell(0, 8, clean_text(f"Nega aynan bu kasb? {top_match.get('why_this', '')}"))
+    pdf.multi_cell(epw, 8, clean_text(f"Nega aynan bu kasb? {top_match.get('why_this', '')}"))
     pdf.ln(3)
     
     pdf.set_font("helvetica", "B", 12)
     pdf.cell(0, 8, clean_text("Asosiy ko'nikmalar:"), ln=1)
     pdf.set_font("helvetica", "", 12)
     for skill in top_match.get("core_skills", []):
-        # BUG TO'G'RILANDI: Joy yetishmovchiligi xatosini oldini olish uchun yagona multi_cell
-        pdf.multi_cell(0, 6, clean_text(f"• {skill}"))
+        pdf.set_x(15) # 4-ZIRH: Kursorni majburiy chapga surish
+        pdf.multi_cell(epw, 6, clean_text(f"• {skill}"))
     pdf.ln(5)
 
-    # --- 3. YO'L XARITASI ---
     pdf.add_page()
     pdf.set_fill_color(230, 241, 255)
     pdf.set_font("helvetica", "B", 14)
@@ -99,16 +102,16 @@ def create_personal_roadmap(chat_id: int, user_name: str, ai_data: dict) -> str:
     
     for step in roadmap:
         pdf.set_font("helvetica", "B", 12)
-        pdf.set_text_color(0, 128, 128) # To'q feruza
+        pdf.set_text_color(0, 128, 128) 
         pdf.cell(0, 8, clean_text(f"{step.get('phase', '')}: {step.get('focus', '')}"), ln=1)
         pdf.set_text_color(50, 50, 50)
         pdf.set_font("helvetica", "", 12)
-        pdf.multi_cell(0, 8, clean_text(step.get('action', '')))
+        pdf.set_x(15) # 4-ZIRH qullanildi
+        pdf.multi_cell(epw, 8, clean_text(step.get('action', '')))
         pdf.ln(3)
         
-    # --- 4. MOLIYA VA TAVSIYALAR ---
-    pdf.set_fill_color(10, 25, 47) # To'q ko'k
-    pdf.set_text_color(255, 255, 255) # Oq matn
+    pdf.set_fill_color(10, 25, 47) 
+    pdf.set_text_color(255, 255, 255) 
     pdf.set_font("helvetica", "B", 14)
     pdf.cell(0, 10, clean_text(" 4. MOLIYAVIY KUTILMALAR VA TAVSIYALAR"), ln=1, fill=True)
     
@@ -127,8 +130,8 @@ def create_personal_roadmap(chat_id: int, user_name: str, ai_data: dict) -> str:
     pdf.cell(0, 8, clean_text("Maxsus Tavsiyalar:"), ln=1)
     pdf.set_font("helvetica", "", 12)
     for tip in tips:
-        # BUG TO'G'RILANDI: Yagona multi_cell
-        pdf.multi_cell(0, 8, clean_text(f"★ {tip}"))
+        pdf.set_x(15) # 4-ZIRH qullanildi
+        pdf.multi_cell(epw, 8, clean_text(f"★ {tip}"))
 
     os.makedirs("generated_pdfs", exist_ok=True)
     file_path = f"generated_pdfs/Premium_Yol_Xaritasi_{chat_id}.pdf"
