@@ -22,6 +22,11 @@ engine = create_engine(
     connect_args={"sslmode": "require"} # Neon DB talab qiladigan xavfsizlik
 )
 
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# MANA SHU QATOR TASODIFAN O'CHIB KETGAN! SHUNI QO'SHIB QO'YING:
+Base = declarative_base()
+
 def get_db():
     db = SessionLocal()
     try:
