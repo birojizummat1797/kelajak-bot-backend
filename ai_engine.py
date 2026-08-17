@@ -1,12 +1,13 @@
 import os
 import json
 import asyncio
-import google.generativeai as genai
+from google import genai  # YANGI KUTUBXONA
 from dotenv import load_dotenv
 
 load_dotenv()
-# Gemini API kalitini sozlash (Buni .env faylga qo'shib qo'yish yodingizdan chiqmasin!)
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+# Yangi usulda klient yaratish
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 async def analyze_user_profile(user_data: dict) -> dict:
     """
@@ -14,7 +15,6 @@ async def analyze_user_profile(user_data: dict) -> dict:
     eng mos kasb va PDF uchun ma'lumotlarni JSON formatida qaytaradi.
     """
     
-    # 🎯 MASTER PROMPT (AI ga qat'iy buyruq)
     prompt = f"""
     Sen dunyodagi eng kuchli IT va Karyera maslahatchisisan. Sening vazifang mijozning psixologik portreti, qiziqishlari, byudjeti va sharoitlaridan kelib chiqib, unga mutlaqo mos keladigan 1 ta eng kuchli zamonaviy kasbni va 2 ta muqobil variantni topish.
 
@@ -22,47 +22,41 @@ async def analyze_user_profile(user_data: dict) -> dict:
     {json.dumps(user_data, indent=2, ensure_ascii=False)}
 
     QAT'IY QOIDALAR:
-    1. Agar mijozning kompyuteri bo'lmasa ("Kompyuter yo'q, faqat telefon"), unga og'ir dasturlash (Backend, Mobile) tavsiya qilma. SMM, Copywriting yoki Mobil Mobilografiya tavsiya qil.
-    2. Agar mijozning byudjeti "Faqat bepul" bo'lsa, unga bepul resurslari ko'p bo'lgan kasblarni (Frontend, Design) ber.
-    3. Agar "Odamlar bilan" ishlashni tanlagan bo'lsa, Project Manager, Sales Manager yoki HR tavsiya qil.
-    4. Natija mijozga tushunarli, o'zbek tilida (lotin yozuvida) bo'lishi shart.
+    1. Agar kompyuter yo'q bo'lsa, SMM, Copywriting kabi telefon kasblarini ber.
+    2. Natija o'zbek tilida (lotin yozuvida) bo'lishi shart.
 
-    NATIJA FORMATI:
-    Javobni FAQATGINA quyidagi aniq JSON formatida qaytar. Hech qanday boshqa so'z, tushuntirish yoki markdown (```json) belgilari qo'shma, faqat sof JSON obyekt bo'lsin:
+    NATIJA FORMATI (Faqat sof JSON):
     {{
       "top_career": {{
-          "title": "Kasb nomi (Masalan: Data Analyst)",
+          "title": "Kasb nomi",
           "fit_score": 92,
-          "reason": "Nima uchun aynan shu kasb mos keldi? (1-2 ta qisqa gap)",
-          "technologies": ["Python", "SQL", "Excel", "PowerBI"],
+          "reason": "Nima uchun aynan shu kasb?",
+          "technologies": ["Python", "SQL"],
           "time_to_learn": "6-8 oy",
           "salary_expectation": "$500 - $1500",
-          "biggest_risk": "Bu sohadagi eng katta qiyinchilik va xavf nima?"
+          "biggest_risk": "Sohadagi xavf"
       }}
     }}
     """
     
     try:
-        # Eng yangi va tezkor modelni tanlaymiz
-        model = genai.GenerativeModel('gemini-3.6-flash')
-        
-        # Asinxron tarzda AI ga so'rov yuborish
-        response = await asyncio.to_thread(model.generate_content, prompt)
+        # YANGI USUL: client.models orqali murojaat qilish
+        response = await asyncio.to_thread(
+            client.models.generate_content,
+            model='gemini-2.5-flash', # Model nomini o'zingiz xohlaganga o'zgartirishingiz mumkin
+            contents=prompt
+        )
         result_text = response.text.strip()
         
-        # Markdown backtick'larni tozalash (agar AI baribir qo'shib yuborsa)
         if result_text.startswith("```json"):
             result_text = result_text.replace("```json", "", 1)
         if result_text.endswith("```"):
             result_text = result_text.rsplit("```", 1)[0]
             
-        # JSON ni lug'atga (dict) o'girish
-        parsed_result = json.loads(result_text.strip())
-        return parsed_result
+        return json.loads(result_text.strip())
         
     except Exception as e:
         print(f"AI Analizida xatolik yuz berdi: {e}")
-        # Xato bo'lganda zaxira (fallback) ma'lumot qaytariladi
         return {
             "top_career": {
                 "title": "Business Analyst",
@@ -71,6 +65,6 @@ async def analyze_user_profile(user_data: dict) -> dict:
                 "technologies": ["Excel", "Jira", "Muloqot"],
                 "time_to_learn": "3-6 oy",
                 "salary_expectation": "$400 - $1000",
-                "biggest_risk": "Doimiy muloqot va bosim"
+                "biggest_risk": "Doimiy muloqot"
             }
         }

@@ -23,3 +23,5 @@ gspread
 google-auth
 google-generativeai
 fpdf2
+google-genai
+fpdf2
