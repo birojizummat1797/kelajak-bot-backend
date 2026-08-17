@@ -1,7 +1,6 @@
 import os
 import json
-import asyncio
-from google import genai  # YANGI KUTUBXONA
+from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,51 +10,63 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 async def analyze_user_profile(user_data: dict) -> dict:
     """
-    Foydalanuvchining diagnostika javoblarini AI orqali tahlil qilib, 
-    eng mos kasb va PDF uchun ma'lumotlarni JSON formatida qaytaradi.
+    Foydalanuvchining ma'lumotlarini xalqaro standartlar asosida chuqur tahlil qiluvchi 
+    Premium AI Dvigateli.
     """
     
     prompt = f"""
-    Sen dunyodagi eng kuchli IT va Karyera maslahatchisisan. Sening vazifang mijozning psixologik portreti, qiziqishlari, byudjeti va sharoitlaridan kelib chiqib, unga mutlaqo mos keladigan 1 ta eng kuchli zamonaviy kasbni va 2 ta muqobil variantni topish.
+    Sen xalqaro miqyosdagi Senior IT-Karyera maslahatchisi va biznes psixologsan. 
+    Sening vazifang quyida berilgan mijoz javoblarini juda chuqur tahlil qilib, uning yashirin potensialini ochib berish va unga 100% mos keladigan 6 oylik Karyera Yo'l Xaritasini tuzib chiqish.
 
     MIJOZNING MA'LUMOTLARI (JSON):
     {json.dumps(user_data, indent=2, ensure_ascii=False)}
 
     QAT'IY QOIDALAR:
-    1. Agar kompyuter yo'q bo'lsa, SMM, Copywriting kabi telefon kasblarini ber.
-    2. Natija o'zbek tilida (lotin yozuvida) bo'lishi shart.
+    1. Tahlil shunchaki oddiy emas, balki qimmatbaho (Premium) maslahat darajasida bo'lishi shart. So'z boyligingni kengaytir va ilhomlantiruvchi tildan foydalan.
+    2. Agar mijozda kompyuter yo'q bo'lsa, unga qat'iyan faqat telefonda yuqori daromad keltiradigan kasblarni (Mobilografiya, SMM, Copywriting, Targetolog, Telegram Botlar Menejeri) tavsiya qil.
+    3. Javob mutlaqo o'zbek tilida (lotin alifbosida) bo'lsin.
+    4. Hech qanday ortiqcha matn, tushuntirish yoki salomlashish yozma. Faqat va faqat quyidagi tuzilishdagi SOF JSON obyektni qaytar.
 
-    NATIJA FORMATI (Faqat sof JSON):
+    KUTILAYOTGAN JSON FORMATI:
     {{
-      "top_career": {{
-          "title": "Kasb nomi",
-          "fit_score": 92,
-          "reason": "Nima uchun aynan shu kasb?",
-          "technologies": ["Python", "SQL"],
-          "time_to_learn": "6-8 oy",
-          "salary_expectation": "$500 - $1500",
-          "biggest_risk": "Sohadagi xavf"
-      }}
+      "psychological_profile": {{
+        "archetype": "Mijozning psixologik arxetipi (Masalan: 'Strategik Fikrlovchi', 'Ijodkor Yaratuvchi', 'Lider-Tashkilotchi')",
+        "super_power": "Mijozning eng kuchli yashirin qobiliyati (1-2 gap)",
+        "growth_area": "Mijoz rivojlantirishi kerak bo'lgan asosiy jihat"
+      }},
+      "careers": {{
+        "top_match": {{
+          "title": "Eng mos Top Kasb nomi",
+          "match_score": 98,
+          "why_this": "Nega aynan bu kasb mijozning xarakteriga va hozirgi sharoitiga mos? (Chuqur va ishonchli asos)",
+          "core_skills": ["Ko'nikma 1", "Ko'nikma 2", "Ko'nikma 3"]
+        }},
+        "alternatives": ["Muqobil kasb 1", "Muqobil kasb 2"]
+      }},
+      "roadmap": [
+        {{"phase": "1-2 oylar", "focus": "Poydevor va Asos", "action": "Aynan nimalarni o'rganish kerak va qanday resurslardan foydalanish lozim?"}},
+        {{"phase": "3-4 oylar", "focus": "Amaliyot va Portfel", "action": "Qanday real loyihalar ustida ishlash va tajriba to'plash kerak?"}},
+        {{"phase": "5-6 oylar", "focus": "Bozorga chiqish", "action": "Birinchi daromadni qanday va qayerdan topish mumkin?"}}
+      ],
+      "financial_forecast": {{
+        "starting_income": "$300 - $500",
+        "potential_1_year": "$1000+"
+      }},
+      "pro_tips": [
+        "Raqobatchilardan bir qadam oldinda bo'lish uchun 1-maxsus tavsiya",
+        "Ish topish yoki mijoz jalb qilish bo'yicha 2-maxsus tavsiya"
+      ]
     }}
     """
     
     try:
-        # YANGI USUL: client.models orqali murojaat qilish
-        # response = await asyncio.to_thread(
-        #     client.models.generate_content,
-        #     model='gemini-3.6-flash', # Model nomini o'zingiz xohlaganga o'zgartirishingiz mumkin
-        #     contents=prompt
-        # )
-
-        # YANGI USUL: Asinxron ishlashi uchun client.aio.models ishlatamiz
-        # Va eng barqaror gemini-1.5-flash modelini qo'yamiz
         response = await client.aio.models.generate_content(
-            model='gemini-3.6-flash', # GOOGLE QAT'IY SO'RAGAN MODEL
+            model='gemini-3.6-flash',
             contents=prompt
         )
-
         result_text = response.text.strip()
         
+        # Markdown backtick'larni tozalash
         if result_text.startswith("```json"):
             result_text = result_text.replace("```json", "", 1)
         if result_text.endswith("```"):
@@ -65,14 +76,5 @@ async def analyze_user_profile(user_data: dict) -> dict:
         
     except Exception as e:
         print(f"AI Analizida xatolik yuz berdi: {e}")
-        return {
-            "top_career": {
-                "title": "Business Analyst",
-                "fit_score": 85,
-                "reason": "Tizimda vaqtinchalik xatolik yuz berdi, lekin analitik qobiliyatlaringiz bu kasbga mos keladi.",
-                "technologies": ["Excel", "Jira", "Muloqot"],
-                "time_to_learn": "3-6 oy",
-                "salary_expectation": "$400 - $1000",
-                "biggest_risk": "Doimiy muloqot"
-            }
-        }
+        # Xatolik yuz berganda bo'sh lug'at qaytariladi
+        return {}
