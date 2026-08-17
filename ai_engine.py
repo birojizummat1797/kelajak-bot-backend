@@ -50,7 +50,7 @@ async def analyze_user_profile(user_data: dict) -> dict:
         # YANGI USUL: Asinxron ishlashi uchun client.aio.models ishlatamiz
         # Va eng barqaror gemini-1.5-flash modelini qo'yamiz
         response = await client.aio.models.generate_content(
-            model='gemini-1.5-flash', 
+            model='gemini-2.0-flash',
             contents=prompt
         )
 
