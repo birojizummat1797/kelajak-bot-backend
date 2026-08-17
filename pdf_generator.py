@@ -1,16 +1,18 @@
 import os
-import re # <-- Zirhli filtrimiz uchun yadroviy kutubxona
+import re
 from fpdf import FPDF
 
 def clean_text(text):
     """PDF qulamangligi uchun matnlarni filtrdan o'tkazamiz va kesamiz"""
     if not text: return ""
+    # Belgilarni standartlashtirish (AI yuborishi mumkin bo'lgan bulletlarni ham oddiy chiziqchaga almashtiramiz)
     text = str(text).replace("–", "-").replace("—", "-").replace("’", "'").replace("‘", "'").replace("“", '"').replace("”", '"').replace("`", "'")
+    text = text.replace("•", "-").replace("★", "*").replace("✓", "ok")
     
-    # 1-ZIRH: AI yuborishi mumkin bo'lgan o'ta uzun chiziqlarni (---, ===) bitta belgiga qisqartiramiz
+    # AI yuborishi mumkin bo'lgan o'ta uzun chiziqlarni (---, ===) bitta belgiga qisqartiramiz
     text = re.sub(r'[-_=*~]{4,}', '-', text)
     
-    # 2-ZIRH: FPDF ni qulatadigan "bitta probelsiz" o'ta uzun so'zlarni (40 ta harfdan oshsa) majburlab bo'lib yuboramiz
+    # FPDF ni qulatadigan "bitta probelsiz" o'ta uzun so'zlarni majburlab bo'lib yuboramiz
     text = re.sub(r'([^\s]{40})', r'\1 ', text)
     
     return text
@@ -40,7 +42,6 @@ def create_personal_roadmap(chat_id: int, user_name: str, ai_data: dict) -> str:
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     
-    # 3-ZIRH: Dinamik sahifa kengligini oldindan hisoblab, FPDF aqlini chalg'itmaymiz
     epw = pdf.epw 
     
     psycho = ai_data.get("psychological_profile", {})
@@ -89,8 +90,8 @@ def create_personal_roadmap(chat_id: int, user_name: str, ai_data: dict) -> str:
     pdf.cell(0, 8, clean_text("Asosiy ko'nikmalar:"), ln=1)
     pdf.set_font("helvetica", "", 12)
     for skill in top_match.get("core_skills", []):
-        pdf.set_x(15) # 4-ZIRH: Kursorni majburiy chapga surish
-        pdf.multi_cell(epw, 6, clean_text(f"• {skill}"))
+        pdf.set_x(15) 
+        pdf.multi_cell(epw, 6, clean_text(f"- {skill}")) # Qora nuqtacha oddiy chiziqchaga almashtirildi
     pdf.ln(5)
 
     pdf.add_page()
@@ -106,7 +107,7 @@ def create_personal_roadmap(chat_id: int, user_name: str, ai_data: dict) -> str:
         pdf.cell(0, 8, clean_text(f"{step.get('phase', '')}: {step.get('focus', '')}"), ln=1)
         pdf.set_text_color(50, 50, 50)
         pdf.set_font("helvetica", "", 12)
-        pdf.set_x(15) # 4-ZIRH qullanildi
+        pdf.set_x(15) 
         pdf.multi_cell(epw, 8, clean_text(step.get('action', '')))
         pdf.ln(3)
         
@@ -130,8 +131,8 @@ def create_personal_roadmap(chat_id: int, user_name: str, ai_data: dict) -> str:
     pdf.cell(0, 8, clean_text("Maxsus Tavsiyalar:"), ln=1)
     pdf.set_font("helvetica", "", 12)
     for tip in tips:
-        pdf.set_x(15) # 4-ZIRH qullanildi
-        pdf.multi_cell(epw, 8, clean_text(f"★ {tip}"))
+        pdf.set_x(15) 
+        pdf.multi_cell(epw, 8, clean_text(f"* {tip}")) # Yulduzcha oddiy yulduzchaga almashtirildi
 
     os.makedirs("generated_pdfs", exist_ok=True)
     file_path = f"generated_pdfs/Premium_Yol_Xaritasi_{chat_id}.pdf"
