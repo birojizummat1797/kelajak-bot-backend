@@ -139,7 +139,7 @@ async def analyze_user_profile(user_data: dict) -> dict:
         return {}
 
     # Dasturchilar usuli: SDK ni chetlab o'tib, to'g'ridan-to'g'ri API ga murojaat qilamiz
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={api_key}"
     
     payload = {
         "contents": [{"parts": [{"text": prompt}]}]
