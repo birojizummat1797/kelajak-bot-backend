@@ -21,7 +21,7 @@ python-dotenv
 httpx
 gspread
 google-auth
-google-generativeai
+# google-generativeai
 fpdf2
-# google-genai
+google-genai
 fpdf2
