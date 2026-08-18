@@ -264,46 +264,15 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 # --- PREMIUM DIAGNOSTIKA TARMOG'I ---
                 if parsed.get("action") == "diagnostics_completed":
                     premium_data = parsed.get("data", {})
-                    name = premium_data.get("goal", {}).get("name", "Lider") 
+                    name = "Lider" # Keyinchalik WebAppdan ism soralganda to'g'rilab qoyamiz
                     
                     print(f"[{chat_id}] 1. Premium ma'lumot keldi. Kuttirish xabari yuborilmoqda...")
-                    wait_msg = await send_message(chat_id, "⏳ <i>Sun'iy intellekt ma'lumotlaringizni tahlil qilmoqda...</i>")
+                    await send_message(chat_id, "⏳ Sun'iy intellekt ma'lumotlaringizni tahlil qilmoqda... Iltimos, 10-15 soniya kuting.")
                     
-                    print(f"[{chat_id}] 2. AI dvigatelga so'rov ketdi. Kutyapmiz...")
-                    ai_analysis = await analyze_user_profile(premium_data)
+                    # 🚀 YECHIM: Og'ir jarayonni Background (orqa fon) ga otamiz
+                    asyncio.create_task(process_premium_background(chat_id, name, premium_data))
                     
-                    print(f"[{chat_id}] 3. AI dan javob keldi! PDF infografika yasalmoqda...")
-                    pdf_path = create_personal_roadmap(chat_id, name, ai_analysis)
-                    
-                    print(f"[{chat_id}] 4. PDF tayyor! Telegram serverlariga HAQIQIY yuklash boshlandi...")
-                    
-                    caption_text = (
-                        "🎉 <b>Tahlil muvaffaqiyatli yakunlandi!</b>\n\n"
-                        "👇 <i>Faylni yuklab oling va o'z kelajagingiz sari birinchi qadamni tashlang!</i>"
-                    )
-                    
-                    # 100% KAFOLATLANGAN FAYL YUKLASH USULI
-                    import os
-                    import httpx
-                    BOT_TOKEN = os.getenv("BOT_TOKEN")
-                    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
-                    
-                    try:
-                        async with httpx.AsyncClient() as client:
-                            with open(pdf_path, "rb") as pdf_file:
-                                files = {"document": (f"Yol_Xaritasi.pdf", pdf_file, "application/pdf")}
-                                data = {"chat_id": chat_id, "caption": caption_text, "parse_mode": "HTML"}
-                                tg_response = await client.post(url, data=data, files=files)
-                                print(f"[{chat_id}] Telegram javobi: {tg_response.json()}")
-                    except Exception as e:
-                        print(f"[{chat_id}] Telegramga yuklashda xatolik: {e}")
-                    
-                    print(f"[{chat_id}] 5. Jarayon tugadi. Xotira tozalanmoqda...")
-                    try:
-                        os.remove(pdf_path)
-                    except Exception as e:
-                        print(f"Faylni o'chirishda xatolik: {e}")
-                        
+                    # Telegram takror yubormasligi uchun shu zahoti OK berib yuboramiz!
                     return {"status": "ok"}
 
                 # --- BEPUL DIAGNOSTIKA TARMOG'I (Eski mantiq) ---
