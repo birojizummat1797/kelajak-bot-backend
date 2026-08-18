@@ -154,6 +154,40 @@ def append_to_sheet(name, phone, result_text, payment_intent, all_answers):
     except Exception as e:
         print(f"Google Sheets xatosi: {e}")
 
+import os
+import httpx
+
+# AI va PDF ni orqa fonda ishlatuvchi maxsus dvigatel
+async def process_premium_background(chat_id, name, premium_data):
+    try:
+        print(f"[{chat_id}] 2. AI dvigatel orqa fonda ishga tushdi...")
+        ai_analysis = await analyze_user_profile(premium_data)
+        
+        print(f"[{chat_id}] 3. AI dan javob keldi! PDF yasalmoqda...")
+        pdf_path = create_personal_roadmap(chat_id, name, ai_analysis)
+        
+        print(f"[{chat_id}] 4. PDF tayyor! Telegramga yuklash boshlandi...")
+        caption_text = (
+            "🎉 Tahlil muvaffaqiyatli yakunlandi!\n\n"
+            "👇 Faylni yuklab oling va o'z kelajagingiz sari birinchi qadamni tashlang!"
+        )
+        
+        BOT_TOKEN = os.getenv("BOT_TOKEN")
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
+        
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            with open(pdf_path, "rb") as pdf_file:
+                files = {"document": (f"Yol_Xaritasi.pdf", pdf_file, "application/pdf")}
+                data = {"chat_id": chat_id, "caption": caption_text, "parse_mode": "HTML"}
+                await client.post(url, data=data, files=files)
+        
+        print(f"[{chat_id}] 5. Jarayon tugadi. Xotira tozalanmoqda...")
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+            
+    except Exception as e:
+        print(f"[{chat_id}] Orqa fondagi xatolik: {e}")
+
 # ⚡️ TELEGRAM API FUNKSIYALARI
 async def send_message(chat_id: int, text: str, reply_markup: dict = None):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
