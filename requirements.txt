@@ -23,5 +23,5 @@ gspread
 google-auth
 google-generativeai
 fpdf2
-google-genai
+# google-genai
 fpdf2
