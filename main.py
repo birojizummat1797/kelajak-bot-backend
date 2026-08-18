@@ -3,7 +3,7 @@ import json
 import httpx
 import asyncio
 from datetime import datetime
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 
@@ -229,9 +229,12 @@ async def send_followup_message(chat_id: int, name: str, avatar: str):
 
 # 🤖 WEBHOOK
 @app.post("/webhook")
-async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
-    try: data = await request.json()
-    except: return {"status": "ok"}
+@app.post("/webhook")
+async def telegram_webhook(request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    try: 
+        data = await request.json()
+    except: 
+        return {"status": "ok"}
     
     if "message" in data:
         msg = data["message"]
@@ -258,22 +261,18 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             try:
                 raw_data = msg["web_app_data"]["data"]
                 parsed = json.loads(raw_data)
-                
-                # --- PREMIUM DIAGNOSTIKA TARMOG'I ---
-                # --- PREMIUM DIAGNOSTIKA TARMOG'I ---
-                # --- PREMIUM DIAGNOSTIKA TARMOG'I ---
+                    
                 if parsed.get("action") == "diagnostics_completed":
-                    premium_data = parsed.get("data", {})
-                    name = "Lider" # Keyinchalik WebAppdan ism soralganda to'g'rilab qoyamiz
-                    
-                    print(f"[{chat_id}] 1. Premium ma'lumot keldi. Kuttirish xabari yuborilmoqda...")
-                    await send_message(chat_id, "⏳ Sun'iy intellekt ma'lumotlaringizni tahlil qilmoqda... Iltimos, 10-15 soniya kuting.")
-                    
-                    # 🚀 YECHIM: Og'ir jarayonni Background (orqa fon) ga otamiz
-                    asyncio.create_task(process_premium_background(chat_id, name, premium_data))
-                    
-                    # Telegram takror yubormasligi uchun shu zahoti OK berib yuboramiz!
-                    return {"status": "ok"}
+                        premium_data = parsed.get("data", {})
+                        name = "Lider" 
+                        
+                        print(f"[{chat_id}] 1. Premium ma'lumot keldi. Kuttirish xabari yuborilmoqda...")
+                        await send_message(chat_id, "⏳ <i>Sun'iy intellekt ma'lumotlaringizni tahlil qilmoqda... Iltimos, 10-15 soniya kuting.</i>")
+                        
+                        # 🚀 YECHIM: FastAPI'ning ishonchli orqa fon tizimiga vazifa beramiz
+                        background_tasks.add_task(process_premium_background, chat_id, name, premium_data)
+                        
+                        return {"status": "ok"}
 
                 # --- BEPUL DIAGNOSTIKA TARMOG'I (Eski mantiq) ---
                 name = parsed.get("name", "Noma'lum")
