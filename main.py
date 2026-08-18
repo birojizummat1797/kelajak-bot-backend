@@ -158,18 +158,59 @@ import os
 import httpx
 
 # AI va PDF ni orqa fonda ishlatuvchi maxsus dvigatel
+# async def process_premium_background(chat_id, name, premium_data):
+#     try:
+#         print(f"[{chat_id}] 2. AI dvigatel orqa fonda ishga tushdi...")
+#         ai_analysis = await analyze_user_profile(premium_data)
+        
+#         print(f"[{chat_id}] 3. AI dan javob keldi! PDF yasalmoqda...")
+#         pdf_path = create_personal_roadmap(chat_id, name, ai_analysis)
+        
+#         print(f"[{chat_id}] 4. PDF tayyor! Telegramga yuklash boshlandi...")
+#         caption_text = (
+#             "🎉 Tahlil muvaffaqiyatli yakunlandi!\n\n"
+#             "👇 Faylni yuklab oling va o'z kelajagingiz sari birinchi qadamni tashlang!"
+#         )
+        
+#         BOT_TOKEN = os.getenv("BOT_TOKEN")
+#         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument"
+        
+#         async with httpx.AsyncClient(timeout=60.0) as client:
+#             with open(pdf_path, "rb") as pdf_file:
+#                 files = {"document": (f"Yol_Xaritasi.pdf", pdf_file, "application/pdf")}
+#                 data = {"chat_id": chat_id, "caption": caption_text, "parse_mode": "HTML"}
+#                 await client.post(url, data=data, files=files)
+        
+#         print(f"[{chat_id}] 5. Jarayon tugadi. Xotira tozalanmoqda...")
+#         if os.path.exists(pdf_path):
+#             os.remove(pdf_path)
+            
+#     except Exception as e:
+#         print(f"[{chat_id}] Orqa fondagi xatolik: {e}")
+
+import traceback
+
 async def process_premium_background(chat_id, name, premium_data):
     try:
-        print(f"[{chat_id}] 2. AI dvigatel orqa fonda ishga tushdi...")
+        # 1-QADAM: AI GA SO'ROV
+        print(f"[{chat_id}] 2. AI dvigatel orqa fonda ishga tushdi...", flush=True)
+        await send_message(chat_id, "🔍 <i>Qadam 1/3: Javoblaringiz sun'iy intellekt tomonidan tahlil qilinmoqda...</i>")
+        
         ai_analysis = await analyze_user_profile(premium_data)
         
-        print(f"[{chat_id}] 3. AI dan javob keldi! PDF yasalmoqda...")
+        # 2-QADAM: PDF YARATISH
+        print(f"[{chat_id}] 3. AI dan javob keldi! PDF yasalmoqda...", flush=True)
+        await send_message(chat_id, "📝 <i>Qadam 2/3: Natijalar asosida Premium Yo'l Xaritasi (PDF) chizilmoqda...</i>")
+        
         pdf_path = create_personal_roadmap(chat_id, name, ai_analysis)
         
-        print(f"[{chat_id}] 4. PDF tayyor! Telegramga yuklash boshlandi...")
+        # 3-QADAM: TELEGRAMGA YUKLASH
+        print(f"[{chat_id}] 4. PDF tayyor! Telegramga yuklash boshlandi...", flush=True)
+        await send_message(chat_id, "🚀 <i>Qadam 3/3: Hujjat tayyor, Telegramga yuklanmoqda... (Kutib turing)</i>")
+        
         caption_text = (
-            "🎉 Tahlil muvaffaqiyatli yakunlandi!\n\n"
-            "👇 Faylni yuklab oling va o'z kelajagingiz sari birinchi qadamni tashlang!"
+            "🎉 <b>Tahlil muvaffaqiyatli yakunlandi!</b>\n\n"
+            "👇 <i>Faylni yuklab oling va o'z kelajagingiz sari birinchi qadamni tashlang!</i>"
         )
         
         BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -179,14 +220,20 @@ async def process_premium_background(chat_id, name, premium_data):
             with open(pdf_path, "rb") as pdf_file:
                 files = {"document": (f"Yol_Xaritasi.pdf", pdf_file, "application/pdf")}
                 data = {"chat_id": chat_id, "caption": caption_text, "parse_mode": "HTML"}
-                await client.post(url, data=data, files=files)
+                resp = await client.post(url, data=data, files=files)
+                print(f"[{chat_id}] Telegram javobi: {resp.text}", flush=True)
         
-        print(f"[{chat_id}] 5. Jarayon tugadi. Xotira tozalanmoqda...")
         if os.path.exists(pdf_path):
             os.remove(pdf_path)
             
     except Exception as e:
-        print(f"[{chat_id}] Orqa fondagi xatolik: {e}")
+        # XATOLIKNI FOSH QILISH!
+        error_details = traceback.format_exc()
+        print(f"[{chat_id}] ORQA FON XATOSI:\n{error_details}", flush=True)
+        await send_message(
+            chat_id, 
+            f"⚠️ <b>Kechirasiz, jarayonda texnik nosozlik yuz berdi:</b>\n\n<code>{str(e)}</code>\n\nIltimos, Dasturchiga xabar bering yoki /start orqali qayta urinib ko'ring."
+        )
 
 # ⚡️ TELEGRAM API FUNKSIYALARI
 async def send_message(chat_id: int, text: str, reply_markup: dict = None):
