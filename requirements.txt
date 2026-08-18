@@ -26,4 +26,4 @@ fpdf2
 # google-genai
 fpdf2
 google-generativeai
-BackgroundTasks
+# BackgroundTasks
