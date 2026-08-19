@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <!--
   IT KARYERA YO'L XARITASI — Premium Diagnostika Xulosasi
-  Chop etishda: Ctrl+P → Margins: "None" / "Yo'q" tanlang (edge-to-edge natija uchun).
-  Barcha [qavs ichidagi] matnlar — to'ldirish uchun joylar.
 -->
 <html lang="uz" data-theme="deeptech">
 <head>
@@ -36,7 +34,7 @@
   }
 
   /* ============================================================
-     THEME TOKENS — 4 palettes, same variable contract
+     THEME TOKENS
   ============================================================ */
   html[data-theme="deeptech"] {
     --bg-page:#F4F7FC; --bg-hero-1:#0A1B3D; --bg-hero-2:#123B7A;
@@ -173,7 +171,7 @@
   .hero-meta-item strong { color:var(--text-hero); font-weight:600; }
 
   /* ============================================================
-     SECTION HEADER (reused across pages)
+     SECTION HEADER
   ============================================================ */
   .section-header { position:relative; padding:16mm 0 8mm; overflow:hidden; }
   .section-header.compact { padding-top:9mm; }
@@ -239,7 +237,7 @@
   .match-detail-row { display:flex; gap:26px; align-items:center; margin-top:6px; }
   .score-ring {
     width:142px; height:142px; border-radius:50%; flex-shrink:0;
-    background:conic-gradient(var(--accent) calc(var(--score,94)*1%), rgba(var(--accent-rgb),.14) 0);
+    background:conic-gradient(var(--accent) calc(var(--score, 94)*1%), rgba(var(--accent-rgb),.14) 0);
     display:flex; align-items:center; justify-content:center; position:relative;
   }
   .score-ring::before { content:""; position:absolute; inset:11px; border-radius:50%; background:var(--card-bg); }
@@ -326,7 +324,7 @@
   .closing-cta p { font-size:11.5px; color:var(--text-hero-muted); }
 
   /* ============================================================
-     THEME SWITCHER (SCREEN ONLY — hidden on print)
+     THEME SWITCHER
   ============================================================ */
   .theme-switcher {
     position:fixed; bottom:22px; right:22px; z-index:999;
@@ -356,19 +354,17 @@
 </head>
 <body>
 
-<!-- ================= THEME SWITCHER (hidden on print) ================= -->
 <div class="theme-switcher no-print">
   <span class="theme-switcher-label">Tema</span>
-  <button class="theme-btn active" data-theme="deeptech" title="DeepTech Blue" aria-label="DeepTech Blue tema" onclick="setTheme('deeptech')"></button>
-  <button class="theme-btn" data-theme="luxury" title="Luxury Dark/Gold" aria-label="Luxury Gold tema" onclick="setTheme('luxury')"></button>
-  <button class="theme-btn" data-theme="emerald" title="Emerald Minimalist" aria-label="Emerald tema" onclick="setTheme('emerald')"></button>
-  <button class="theme-btn" data-theme="purple" title="Elegant Purple" aria-label="Purple tema" onclick="setTheme('purple')"></button>
+  <button class="theme-btn active" data-theme="deeptech" onclick="setTheme('deeptech')"></button>
+  <button class="theme-btn" data-theme="luxury" onclick="setTheme('luxury')"></button>
+  <button class="theme-btn" data-theme="emerald" onclick="setTheme('emerald')"></button>
+  <button class="theme-btn" data-theme="purple" onclick="setTheme('purple')"></button>
   <button class="print-btn" onclick="window.print()">🖨 Chop etish</button>
 </div>
 
 <main>
-
-  <!-- ================= PAGE 1 — HERO + PSIXOLOGIK PROFIL ================= -->
+  <!-- PAGE 1 -->
   <div class="page">
     <div class="hero">
       <div class="confidential-badge">🔒 Maxfiy — Shaxsiy Hisobot</div>
@@ -377,11 +373,11 @@
       <div class="hero-subtitle">Premium Diagnostika Xulosasi</div>
       <div class="hero-name-block">
         <div class="hero-name-label">Tayyorlandi</div>
-        <div class="hero-name">[Ism Familiya]</div>
+        <div class="hero-name">{{ name }}</div>
         <div class="hero-meta">
-          <div class="hero-meta-item">Sana: <strong>[00.00.2026]</strong></div>
-          <div class="hero-meta-item">Hisobot №: <strong>[0000]</strong></div>
-          <div class="hero-meta-item">Tayyorladi: <strong>[Brend nomi]</strong></div>
+          <div class="hero-meta-item">Sana: <strong><script>document.write(new Date().toLocaleDateString('uz-UZ'))</script></strong></div>
+          <div class="hero-meta-item">Hisobot №: <strong><script>document.write(Math.floor(Math.random() * 9000 + 1000))</script></strong></div>
+          <div class="hero-meta-item">Tayyorladi: <strong>Kelajak Bot AI</strong></div>
         </div>
       </div>
     </div>
@@ -400,8 +396,8 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-4 3.1-6.4 7-6.4s7 2.4 7 6.4"/></svg>
           </div>
           <div class="profile-card-label">Arxetip</div>
-          <div class="profile-card-value">Lider</div>
-          <p class="profile-card-desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore.</p>
+          <div class="profile-card-value">Psixotip</div>
+          <p class="profile-card-desc">{{ archetype }}</p>
         </div>
 
         <div class="profile-card">
@@ -409,8 +405,8 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="7" y2="7"/><line x1="17" y1="17" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="7" y2="17"/><line x1="17" y1="7" x2="19.1" y2="4.9"/></svg>
           </div>
           <div class="profile-card-label">Super Kuch</div>
-          <div class="profile-card-value">Strategik Fikrlash</div>
-          <p class="profile-card-desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam quis nostrud exercitation.</p>
+          <div class="profile-card-value">Potensial</div>
+          <p class="profile-card-desc">{{ super_power }}</p>
         </div>
 
         <div class="profile-card">
@@ -418,19 +414,15 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,17 9,11 13,15 21,6"/><polyline points="15,6 21,6 21,12"/></svg>
           </div>
           <div class="profile-card-label">O'sish Nuqtasi</div>
-          <div class="profile-card-value">Vaqtni Boshqarish</div>
-          <p class="profile-card-desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis aute irure dolor in reprehenderit voluptate.</p>
+          <div class="profile-card-value">Rivojlanish</div>
+          <p class="profile-card-desc">{{ growth_area }}</p>
         </div>
       </div>
     </div>
-
-    <div class="page-footer">
-      <span>Karyera Yo'l Xaritasi — Diagnostika Hisoboti</span>
-      <span>01 / 04</span>
-    </div>
+    <div class="page-footer"><span>Karyera Yo'l Xaritasi</span><span>01 / 04</span></div>
   </div>
 
-  <!-- ================= PAGE 2 — ENG MOS KASB ================= -->
+  <!-- PAGE 2 -->
   <div class="page">
     <div class="page-body">
       <div class="section-header">
@@ -445,101 +437,64 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="3" y1="13" x2="21" y2="13"/></svg>
           Top Karyera Mosligi — #1 Tavsiya
         </div>
-        <h3 class="match-job-title">Full-Stack Dasturchi</h3>
-        <div class="match-job-subtitle">Sizning kuchli tomonlaringiz, qiziqishlaringiz va test natijalaringiz asosida aniqlandi.</div>
+        <h3 class="match-job-title">{{ top_job_title }}</h3>
+        <div class="match-job-subtitle">Sizning psixologik profilingiz, javoblaringiz va kuchli tomonlaringiz asosida yuz foiz aniqlandi.</div>
 
         <div class="match-detail-row">
-          <div class="score-ring" style="--score:94;">
+          <div class="score-ring" style="--score:{{ match_score }};">
             <div class="score-ring-inner">
-              <div class="score-ring-value">94%</div>
+              <div class="score-ring-value">{{ match_score }}%</div>
               <div class="score-ring-label">Moslik</div>
             </div>
           </div>
           <div class="why-box">
             <h3>Nima uchun aynan shu kasb?</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+            <p>{{ why_this_job }}</p>
           </div>
         </div>
 
         <div class="skills-block">
           <div class="block-label">Asosiy Ko'nikmalar</div>
           <div class="skills-wrap">
-            <span class="skill-chip">JavaScript</span>
-            <span class="skill-chip">React</span>
-            <span class="skill-chip">Node.js</span>
-            <span class="skill-chip">TypeScript</span>
-            <span class="skill-chip">SQL</span>
-            <span class="skill-chip">Git</span>
-            <span class="skill-chip">REST API</span>
-            <span class="skill-chip">Docker</span>
+            {% for skill in core_skills %}
+            <span class="skill-chip">{{ skill }}</span>
+            {% endfor %}
           </div>
         </div>
       </div>
     </div>
-
-    <div class="page-footer">
-      <span>Karyera Yo'l Xaritasi — Diagnostika Hisoboti</span>
-      <span>02 / 04</span>
-    </div>
+    <div class="page-footer"><span>Karyera Yo'l Xaritasi</span><span>02 / 04</span></div>
   </div>
 
-  <!-- ================= PAGE 3 — 6 OYLIK RIVOJLANISH XARITASI ================= -->
+  <!-- PAGE 3 -->
   <div class="page">
     <div class="page-body">
       <div class="section-header">
         <div class="section-number-bg">03</div>
         <div class="section-eyebrow">Bo'lim 03</div>
-        <h2 class="section-title">6 Oylik Rivojlanish Xaritasi</h2>
+        <h2 class="section-title">Rivojlanish Xaritasi</h2>
         <div class="section-title-bar"></div>
       </div>
 
       <div class="timeline">
+        {% for step in roadmap_phases %}
         <div class="timeline-item">
-          <div class="timeline-node">1</div>
+          <div class="timeline-node">{{ loop.index }}</div>
           <div class="timeline-content">
-            <span class="timeline-phase-tag">1–2 Oy</span>
-            <h3>Poydevor</h3>
+            <span class="timeline-phase-tag">{{ step.phase }}</span>
+            <h3>{{ step.focus }}</h3>
             <ul class="timeline-list">
-              <li>HTML, CSS va JavaScript asoslarini chuqur o'rganish</li>
-              <li>Git va GitHub bilan ishlashni boshlash</li>
-              <li>3–5 ta kichik amaliy loyiha ustida mashq qilish</li>
+              <li>{{ step.action }}</li>
             </ul>
           </div>
         </div>
-        <div class="timeline-item">
-          <div class="timeline-node">2</div>
-          <div class="timeline-content">
-            <span class="timeline-phase-tag">3–4 Oy</span>
-            <h3>Chuqurlashtirish</h3>
-            <ul class="timeline-list">
-              <li>React (yoki Vue) freymvorkini o'zlashtirish</li>
-              <li>Backend asoslari: Node.js va ma'lumotlar bazasi</li>
-              <li>API integratsiyasi bilan to'liq loyiha yaratish</li>
-            </ul>
-          </div>
-        </div>
-        <div class="timeline-item">
-          <div class="timeline-node">3</div>
-          <div class="timeline-content">
-            <span class="timeline-phase-tag">5–6 Oy</span>
-            <h3>Portfolio va Ish Qidiruv</h3>
-            <ul class="timeline-list">
-              <li>3 ta to'liq portfolio loyihasini yakunlash</li>
-              <li>LinkedIn va GitHub profilini optimallashtirish</li>
-              <li>Texnik intervyularga tayyorgarlik ko'rish</li>
-            </ul>
-          </div>
-        </div>
+        {% endfor %}
       </div>
     </div>
-
-    <div class="page-footer">
-      <span>Karyera Yo'l Xaritasi — Diagnostika Hisoboti</span>
-      <span>03 / 04</span>
-    </div>
+    <div class="page-footer"><span>Karyera Yo'l Xaritasi</span><span>03 / 04</span></div>
   </div>
 
-  <!-- ================= PAGE 4 — MOLIYAVIY PROGNOZ VA TAVSIYALAR ================= -->
+  <!-- PAGE 4 -->
   <div class="page">
     <div class="page-body">
       <div class="section-header">
@@ -551,54 +506,40 @@
 
       <div class="finance-row">
         <div class="finance-card">
-          <div class="finance-amount">$300–600</div>
-          <div class="finance-bar-track"><div class="finance-bar" style="height:32%"></div></div>
-          <div class="finance-level">Junior</div>
+          <div class="finance-amount">{{ starting_income }}</div>
+          <div class="finance-bar-track"><div class="finance-bar" style="height:40%"></div></div>
+          <div class="finance-level">Boshlang'ich (Junior)</div>
         </div>
         <div class="finance-card">
-          <div class="finance-amount">$800–1,500</div>
-          <div class="finance-bar-track"><div class="finance-bar" style="height:62%"></div></div>
-          <div class="finance-level">Middle</div>
+          <div class="finance-amount">{{ potential_1_year }}</div>
+          <div class="finance-bar-track"><div class="finance-bar" style="height:75%"></div></div>
+          <div class="finance-level">1 yildan so'ng (Middle)</div>
         </div>
         <div class="finance-card">
-          <div class="finance-amount">$2,000–4,000+</div>
+          <div class="finance-amount">Cheklanmagan</div>
           <div class="finance-bar-track"><div class="finance-bar" style="height:100%"></div></div>
-          <div class="finance-level">Senior</div>
+          <div class="finance-level">Ekspert (Senior)</div>
         </div>
       </div>
 
       <div class="tips-section">
-        <div class="block-label">Professional Maslahatlar</div>
+        <div class="block-label">Maxsus Tavsiyalar</div>
         <div class="tips-list">
+          {% for tip in pro_tips %}
           <div class="tip-item">
-            <div class="tip-number">1</div>
-            <div class="tip-text"><strong>Har kuni kod yozing.</strong> Kamida 1 soat amaliyotga bag'ishlang — barqarorlik natijadan muhimroq.</div>
+            <div class="tip-number">{{ loop.index }}</div>
+            <div class="tip-text">{{ tip }}</div>
           </div>
-          <div class="tip-item">
-            <div class="tip-number">2</div>
-            <div class="tip-text"><strong>Real loyihalar yarating.</strong> Portfolio nazariyadan ko'ra ko'proq gapiradi.</div>
-          </div>
-          <div class="tip-item">
-            <div class="tip-number">3</div>
-            <div class="tip-text"><strong>Hamjamiyatga qo'shiling.</strong> IT hamjamiyatlarida faol bo'ling va tarmoq (networking) quring.</div>
-          </div>
-          <div class="tip-item">
-            <div class="tip-number">4</div>
-            <div class="tip-text"><strong>O'rganishni to'xtatmang.</strong> Texnologiyalar tez o'zgaradi — moslashuvchan bo'ling.</div>
-          </div>
+          {% endfor %}
         </div>
       </div>
 
       <div class="closing-cta">
         <h3>Ushbu yo'l xaritasi sizning shaxsiy natijalaringiz asosida tuzildi</h3>
-        <p>[Brend nomi] jamoasi tomonidan tayyorlangan — [sayt.uz]</p>
+        <p>Kelajak Bot AI — Zamonaviy Kasblar Diagnostikasi</p>
       </div>
     </div>
-
-    <div class="page-footer">
-      <span>Karyera Yo'l Xaritasi — Diagnostika Hisoboti</span>
-      <span>04 / 04</span>
-    </div>
+    <div class="page-footer"><span>Karyera Yo'l Xaritasi</span><span>04 / 04</span></div>
   </div>
 
 </main>
