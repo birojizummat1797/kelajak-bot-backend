@@ -18,10 +18,10 @@ async def analyze_user_profile(user_data: dict) -> dict:
 
     QAT'IY QOIDALAR:
     1. Tahlil shunchaki oddiy emas, balki qimmatbaho (Premium) maslahat darajasida bo'lishi shart.
-    2. 'Constraints' va 'Values' dagi mijozning vaqti, kompyuteri va ingliz tili darajasiga mos reja tuz. Agar kompyuteri yo'q bo'lsa, qat'iyan faqat telefonda yuqori daromad keltiradigan kasblarni tavsiya qil.
-    3. Mijozga mos kelgan kasbdan kelib chiqib, Junior (boshlang'ich) darajaga chiqish uchun qancha vaqt ketishini realistik tarzda aniqla (masalan, SMM/Dizayn uchun 4-6 oy, Dasturlash uchun 9-12 oy). Shu muddatni mantiqiy jihatdan 3 dan 5 tagacha bosqichlarga (fazalarga) bo'lib chiq.
-    4. Javob mutlaqo o'zbek tilida bo'lsin.
-    5. Hech qanday markdown (```json ... ```) ishlatma! Faqat va faqat SOF JSON obyektni qaytar. Boshqa bitta ham so'z yozma!
+    2. 'Constraints' va 'Values' dagi mijozning vaqti, kompyuteri va ingliz tili darajasiga mos reja tuz. 
+    3. BOSQICHLAR SONI: Mijozga mos kelgan kasbdan kelib chiqib, Junior darajaga chiqish vaqtini aniqla. DIQQAT: Agar o'rganish muddati 6 oydan ko'p bo'lsa (masalan, 9-12 oy), 'roadmap' ichidagi bosqichlar soni QAT'IYAN 4 ta yoki 5 ta bo'lishi SHART! 3 ta bilan cheklanib qolma.
+    4. MOLIYAVIY REALLIK: Junior (boshlang'ich) daromadni O'zbekiston va MDH bozori realligidan kelib chiqib yoz (masalan, noldan boshlagan stajyor/junior uchun $150-$300). Osmon-u falak raqamlar yozib, mijozni aldamaslik (overpromise qilmaslik) bizning asosiy qadriyatimiz.
+    5. Javob mutlaqo o'zbek tilida bo'lsin. Hech qanday markdown (```json ... ```) ishlatma! Faqat va faqat SOF JSON obyektni qaytar. Boshqa bitta ham so'z yozma!
 
     KUTILAYOTGAN JSON FORMATI:
     {{
@@ -41,12 +41,13 @@ async def analyze_user_profile(user_data: dict) -> dict:
       }},
       "roadmap": [
         {{"phase": "1-3 oylar", "focus": "Poydevor va Asos", "action": "Aynan nimalarni o'rganish kerak?"}},
-        {{"phase": "4-7 oylar", "focus": "Amaliyot va Portfel", "action": "Qanday real loyihalar qilish kerak?"}},
-        {{"phase": "8-12 oylar", "focus": "Bozorga chiqish", "action": "Birinchi daromadni qanday topish mumkin?"}}
+        {{"phase": "4-6 oylar", "focus": "Chuqurlashtirish", "action": "Qanday real loyihalar qilish kerak?"}},
+        {{"phase": "7-9 oylar", "focus": "Amaliyot va Portfel", "action": "Nimalarga e'tibor berish kerak?"}},
+        {{"phase": "10-12 oylar", "focus": "Bozorga chiqish", "action": "Birinchi daromadni qanday topish mumkin?"}}
       ],
       "financial_forecast": {{
-        "starting_income": "$300 - $500",
-        "potential_1_year": "$1000+"
+        "starting_income": "$150 - $300 (Stajirovka / Junior)",
+        "potential_1_year": "$600 - $1000+"
       }},
       "pro_tips": [
         "Raqobatchilardan bir qadam oldinda bo'lish uchun maxsus tavsiya",
