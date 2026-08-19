@@ -251,6 +251,14 @@ async def process_premium_background(chat_id, name, premium_data):
         await send_message(chat_id, "🔍 <i>Qadam 1/2: Javoblaringiz tahlil qilinmoqda...</i>")
         
         ai_analysis = await analyze_user_profile(premium_data)
+            # 🚀 YANGI QO'SHILGAN FILTR: Agar AI serveri band bo'lib, xato qaytarsa
+        if not ai_analysis:
+            await send_message(
+                chat_id, 
+                "⚠️ <b>Kechirasiz, ayni damda Sun'iy Intellekt serverlarida yuqori yuklanish (navbat) kuzatilmoqda.</b>\n\n"
+                "Iltimos, birozdan so'ng qayta urinib ko'ring yoki /start buyrug'ini bosing."
+            )
+            return  # Dastur shu joyda to'xtaydi va bo'sh havola yasamaydi
         
         # 2-QADAM: MAXSUS HAVOLA YARATISH
         print(f"[{chat_id}] 3. AI dan javob keldi! Havola tayyorlanmoqda...", flush=True)
@@ -285,6 +293,8 @@ async def process_premium_background(chat_id, name, premium_data):
             chat_id, 
             f"⚠️ <b>Jarayonda texnik nosozlik yuz berdi.</b> Iltimos qayta urinib ko'ring."
         )
+
+
 
 # ⚡️ TELEGRAM API FUNKSIYALARI
 async def send_message(chat_id: int, text: str, reply_markup: dict = None):
