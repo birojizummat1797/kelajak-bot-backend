@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<!--
+  IT KARYERA YO'L XARITASI — Premium Diagnostika Xulosasi
+  Chop etishda: Ctrl+P → Margins: "None" / "Yo'q" tanlang (edge-to-edge natija uchun).
+  Barcha [qavs ichidagi] matnlar — to'ldirish uchun joylar.
+-->
+<html lang="uz" data-theme="deeptech">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karyera Yo'l Xaritasi — Premium Diagnostika Xulosasi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     RESET & BASE
+  ============================================================ */
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body {
+    font-family:'Inter',sans-serif;
+    background:#D8DDE5;
+    color:#1a1a1a;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    padding:40px 0;
+  }
+  h1,h2,h3,h4,h5 { font-family:'Montserrat',sans-serif; font-weight:700; }
+  p { line-height:1.6; orphans:3; widows:3; }
+  ul { list-style:none; }
+  svg { display:block; }
+  button { font-family:inherit; }
+  button:focus-visible { outline:2px solid #2757EB; outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition:none !important; animation:none !important; }
+  }
+
+  /* ============================================================
+     THEME TOKENS — 4 palettes, same variable contract
+  ============================================================ */
+  html[data-theme="deeptech"] {
+    --bg-page:#F4F7FC; --bg-hero-1:#0A1B3D; --bg-hero-2:#123B7A;
+    --text-hero:#FFFFFF; --text-hero-muted:rgba(255,255,255,.68);
+    --card-bg:#FFFFFF; --card-border:#E3E9F5;
+    --text-primary:#0B1B3A; --text-secondary:#55617A; --text-muted:#8993AC;
+    --accent:#2757EB; --accent-rgb:39,87,235;
+    --accent-2:#06B6D4; --accent-2-rgb:6,182,212;
+    --divider:#E3E9F5; --shadow-rgb:15,42,92;
+    --chip-bg:rgba(39,87,235,.08); --chip-text:#2050D6;
+  }
+  html[data-theme="luxury"] {
+    --bg-page:#14120E; --bg-hero-1:#0B0906; --bg-hero-2:#221A0F;
+    --text-hero:#F6EFDD; --text-hero-muted:rgba(246,239,221,.65);
+    --card-bg:#1E1B15; --card-border:rgba(212,175,55,.22);
+    --text-primary:#F3ECDA; --text-secondary:#BBAF95; --text-muted:#8C816B;
+    --accent:#D4AF37; --accent-rgb:212,175,55;
+    --accent-2:#C88A45; --accent-2-rgb:200,138,69;
+    --divider:rgba(212,175,55,.18); --shadow-rgb:0,0,0;
+    --chip-bg:rgba(212,175,55,.14); --chip-text:#E8C766;
+  }
+  html[data-theme="emerald"] {
+    --bg-page:#FFFFFF; --bg-hero-1:#F1FAF6; --bg-hero-2:#E1F3EA;
+    --text-hero:#10241C; --text-hero-muted:rgba(16,36,28,.62);
+    --card-bg:#FFFFFF; --card-border:#E1EFE7;
+    --text-primary:#10241C; --text-secondary:#55685E; --text-muted:#8B9C93;
+    --accent:#0E9D6E; --accent-rgb:14,157,110;
+    --accent-2:#3FC98A; --accent-2-rgb:63,201,138;
+    --divider:#E1EFE7; --shadow-rgb:16,36,28;
+    --chip-bg:rgba(14,157,110,.08); --chip-text:#0E9D6E;
+  }
+  html[data-theme="purple"] {
+    --bg-page:#FBF9FD; --bg-hero-1:#2C1946; --bg-hero-2:#4B2D78;
+    --text-hero:#FFFFFF; --text-hero-muted:rgba(255,255,255,.68);
+    --card-bg:#FFFFFF; --card-border:#E9E0F5;
+    --text-primary:#2A1A3D; --text-secondary:#6C5C81; --text-muted:#9A8CAE;
+    --accent:#7C3AED; --accent-rgb:124,58,237;
+    --accent-2:#C084FC; --accent-2-rgb:192,132,252;
+    --divider:#E9E0F5; --shadow-rgb:76,42,114;
+    --chip-bg:rgba(124,58,237,.08); --chip-text:#7C3AED;
+  }
+
+  /* ============================================================
+     PAGE / PRINT SETUP
+  ============================================================ */
+  @page { size:A4; margin:0; }
+
+  .page {
+    width:210mm;
+    min-height:297mm;
+    margin:0 auto 32px;
+    background:var(--bg-page);
+    position:relative;
+    box-shadow:0 25px 60px rgba(0,0,0,.18),0 4px 14px rgba(0,0,0,.08);
+    page-break-after:always;
+    break-after:page;
+  }
+  .page:last-of-type { page-break-after:auto; break-after:auto; margin-bottom:0; }
+  .page::before {
+    content:"";
+    position:absolute; top:0; left:0; right:0; height:5mm;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  }
+  .page-body { padding:0 16mm 20mm; }
+  .page-footer {
+    position:absolute; left:0; right:0; bottom:0;
+    padding:6mm 16mm;
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:8.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--text-muted);
+    border-top:1px solid var(--divider);
+  }
+
+  @media print {
+    body { background:none; padding:0; }
+    .page { box-shadow:none; margin:0; }
+    .no-print { display:none !important; }
+  }
+
+  /* ============================================================
+     HERO (PAGE 1)
+  ============================================================ */
+  .hero {
+    padding:15mm 16mm 12mm;
+    background:linear-gradient(135deg,var(--bg-hero-1),var(--bg-hero-2));
+    color:var(--text-hero);
+    position:relative;
+    overflow:hidden;
+  }
+  .hero::after {
+    content:"";
+    position:absolute; top:-120px; right:-100px;
+    width:380px; height:380px; border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,.10),transparent 70%);
+  }
+  .hero::before {
+    content:"";
+    position:absolute; bottom:-140px; left:-80px;
+    width:300px; height:300px; border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,.06),transparent 70%);
+  }
+  .confidential-badge {
+    position:relative; z-index:1;
+    display:inline-flex; align-items:center; gap:6px;
+    padding:5px 12px; border-radius:999px;
+    background:rgba(255,255,255,.12);
+    font-size:9.5px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+    margin-bottom:16px;
+  }
+  .hero-eyebrow {
+    position:relative; z-index:1;
+    font-size:11px; font-weight:700; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--accent-2); margin-bottom:12px;
+  }
+  .hero h1 {
+    position:relative; z-index:1;
+    font-size:38px; font-weight:800; line-height:1.12; margin-bottom:8px;
+  }
+  .hero-subtitle {
+    position:relative; z-index:1;
+    font-size:15px; font-weight:400; color:var(--text-hero-muted); margin-bottom:26px;
+  }
+  .hero-name-block {
+    position:relative; z-index:1;
+    margin-top:22px; padding-top:22px; border-top:1px solid rgba(255,255,255,.2);
+  }
+  .hero-name-label {
+    font-size:10px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--text-hero-muted); margin-bottom:6px;
+  }
+  .hero-name { font-size:30px; font-weight:800; }
+  .hero-meta { display:flex; gap:30px; margin-top:16px; flex-wrap:wrap; position:relative; z-index:1; }
+  .hero-meta-item { font-size:11.5px; color:var(--text-hero-muted); }
+  .hero-meta-item strong { color:var(--text-hero); font-weight:600; }
+
+  /* ============================================================
+     SECTION HEADER (reused across pages)
+  ============================================================ */
+  .section-header { position:relative; padding:16mm 0 8mm; overflow:hidden; }
+  .section-header.compact { padding-top:9mm; }
+  .section-number-bg {
+    position:absolute; top:-10mm; right:0;
+    font-size:150px; font-weight:900; line-height:1;
+    color:rgba(var(--accent-rgb),.055); z-index:0; user-select:none;
+  }
+  .section-eyebrow {
+    position:relative; z-index:1;
+    font-size:11px; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--accent); margin-bottom:8px;
+  }
+  .section-title { position:relative; z-index:1; font-size:26px; font-weight:800; color:var(--text-primary); }
+  .section-title-bar {
+    position:relative; z-index:1;
+    width:46px; height:4px; border-radius:2px; margin-top:12px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  }
+  .block-label {
+    font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text-muted); margin-bottom:10px;
+  }
+
+  /* ============================================================
+     PROFILE CARDS (SECTION 1)
+  ============================================================ */
+  .cards-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:6px; }
+  .profile-card {
+    background:var(--card-bg); border:1px solid var(--card-border);
+    border-radius:18px; padding:22px 20px;
+    box-shadow:0 6px 22px rgba(var(--shadow-rgb),.06);
+    page-break-inside:avoid; break-inside:avoid;
+  }
+  .profile-card-icon {
+    width:42px; height:42px; border-radius:12px;
+    background:rgba(var(--accent-rgb),.1); color:var(--accent);
+    display:flex; align-items:center; justify-content:center; margin-bottom:16px;
+  }
+  .profile-card-label {
+    font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text-muted); margin-bottom:6px;
+  }
+  .profile-card-value { font-size:19px; font-weight:700; color:var(--text-primary); margin-bottom:10px; }
+  .profile-card-desc { font-size:12px; line-height:1.65; color:var(--text-secondary); }
+
+  /* ============================================================
+     CAREER MATCH (SECTION 2)
+  ============================================================ */
+  .match-card {
+    margin-top:6px; padding:30px 28px; border-radius:22px;
+    background:linear-gradient(135deg,rgba(var(--accent-rgb),.06),rgba(var(--accent-2-rgb),.045));
+    border:1px solid var(--card-border);
+    page-break-inside:avoid; break-inside:avoid;
+  }
+  .match-badge {
+    display:inline-flex; align-items:center; gap:8px;
+    color:var(--accent); font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  .match-job-title { font-size:50px; font-weight:800; color:var(--text-primary); line-height:1.06; margin-bottom:8px; }
+  .match-job-subtitle { font-size:13px; color:var(--text-secondary); margin-bottom:24px; max-width:75%; }
+  .match-detail-row { display:flex; gap:26px; align-items:center; margin-top:6px; }
+  .score-ring {
+    width:142px; height:142px; border-radius:50%; flex-shrink:0;
+    background:conic-gradient(var(--accent) calc(var(--score,94)*1%), rgba(var(--accent-rgb),.14) 0);
+    display:flex; align-items:center; justify-content:center; position:relative;
+  }
+  .score-ring::before { content:""; position:absolute; inset:11px; border-radius:50%; background:var(--card-bg); }
+  .score-ring-inner { position:relative; z-index:1; text-align:center; }
+  .score-ring-value { font-family:'Montserrat',sans-serif; font-size:28px; font-weight:800; color:var(--accent); }
+  .score-ring-label { font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); margin-top:2px; }
+  .why-box { flex:1; }
+  .why-box h3 { font-size:13.5px; font-weight:700; color:var(--text-primary); margin-bottom:8px; }
+  .why-box p { font-size:12px; line-height:1.7; color:var(--text-secondary); }
+  .skills-block { margin-top:22px; }
+  .skills-wrap { display:flex; flex-wrap:wrap; gap:9px; }
+  .skill-chip {
+    padding:7px 15px; border-radius:999px; background:var(--chip-bg); color:var(--chip-text);
+    font-size:11.5px; font-weight:600;
+  }
+
+  /* ============================================================
+     TIMELINE (SECTION 3)
+  ============================================================ */
+  .timeline { position:relative; margin-top:10px; }
+  .timeline::before {
+    content:""; position:absolute; left:23px; top:6px; bottom:6px; width:2px;
+    background:linear-gradient(180deg,var(--accent),var(--accent-2)); opacity:.28;
+  }
+  .timeline-item { position:relative; padding-left:64px; margin-bottom:20px; page-break-inside:avoid; break-inside:avoid; }
+  .timeline-item:last-child { margin-bottom:0; }
+  .timeline-node {
+    position:absolute; left:0; top:0; width:47px; height:47px; border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Montserrat',sans-serif; font-weight:800; font-size:17px;
+    box-shadow:0 8px 18px rgba(var(--accent-rgb),.32);
+  }
+  .timeline-content {
+    background:var(--card-bg); border:1px solid var(--card-border); border-radius:16px;
+    padding:18px 22px; box-shadow:0 5px 18px rgba(var(--shadow-rgb),.05);
+  }
+  .timeline-phase-tag {
+    display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--accent); background:var(--chip-bg); padding:3px 10px; border-radius:999px; margin-bottom:8px;
+  }
+  .timeline-content h3 { font-size:16.5px; font-weight:700; color:var(--text-primary); margin-bottom:10px; }
+  .timeline-list li {
+    font-size:12px; color:var(--text-secondary); padding-left:17px; position:relative; margin-bottom:6px; line-height:1.55;
+  }
+  .timeline-list li::before {
+    content:""; position:absolute; left:0; top:6px; width:6px; height:6px; border-radius:50%; background:var(--accent-2);
+  }
+
+  /* ============================================================
+     FINANCE + TIPS (SECTION 4)
+  ============================================================ */
+  .finance-row { display:flex; gap:16px; margin-top:6px; }
+  .finance-card {
+    flex:1; text-align:center; background:var(--card-bg); border:1px solid var(--card-border);
+    border-radius:18px; padding:20px 14px; page-break-inside:avoid; break-inside:avoid;
+  }
+  .finance-amount { font-family:'Montserrat',sans-serif; font-weight:800; font-size:16px; color:var(--text-primary); margin-bottom:12px; }
+  .finance-bar-track { height:90px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:12px; }
+  .finance-bar { width:34px; border-radius:8px 8px 0 0; background:linear-gradient(180deg,var(--accent-2),var(--accent)); }
+  .finance-level { font-size:10.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); }
+
+  .tips-section { margin-top:30px; }
+  .tips-list { margin-top:12px; display:flex; flex-direction:column; gap:11px; }
+  .tip-item {
+    display:flex; gap:14px; align-items:flex-start; background:var(--card-bg);
+    border:1px solid var(--card-border); border-radius:14px; padding:14px 18px;
+    page-break-inside:avoid; break-inside:avoid;
+  }
+  .tip-number {
+    width:25px; height:25px; border-radius:50%; background:rgba(var(--accent-rgb),.1); color:var(--accent);
+    font-family:'Montserrat',sans-serif; font-weight:800; font-size:11.5px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;
+  }
+  .tip-text { font-size:12px; color:var(--text-secondary); line-height:1.6; }
+  .tip-text strong { color:var(--text-primary); }
+
+  .closing-cta {
+    margin-top:26px; text-align:center; padding:26px; border-radius:18px;
+    background:linear-gradient(135deg,var(--bg-hero-1),var(--bg-hero-2)); color:var(--text-hero);
+    page-break-inside:avoid; break-inside:avoid;
+  }
+  .closing-cta h3 { font-size:17px; margin-bottom:6px; }
+  .closing-cta p { font-size:11.5px; color:var(--text-hero-muted); }
+
+  /* ============================================================
+     THEME SWITCHER (SCREEN ONLY — hidden on print)
+  ============================================================ */
+  .theme-switcher {
+    position:fixed; bottom:22px; right:22px; z-index:999;
+    display:flex; align-items:center; gap:10px;
+    background:#fff; border-radius:999px; padding:10px 16px 10px 14px;
+    box-shadow:0 12px 32px rgba(0,0,0,.22);
+    font-family:'Inter',sans-serif;
+  }
+  .theme-switcher-label { font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#777; }
+  .theme-btn {
+    width:25px; height:25px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0;
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  .theme-btn:hover { transform:scale(1.12); }
+  .theme-btn.active { border-color:#2a2a2a; }
+  .theme-btn[data-theme="deeptech"] { background:linear-gradient(135deg,#0A1B3D,#2757EB); }
+  .theme-btn[data-theme="luxury"] { background:linear-gradient(135deg,#14120E,#D4AF37); }
+  .theme-btn[data-theme="emerald"] { background:linear-gradient(135deg,#0E9D6E,#3FC98A); }
+  .theme-btn[data-theme="purple"] { background:linear-gradient(135deg,#2C1946,#7C3AED); }
+  .print-btn {
+    display:flex; align-items:center; gap:6px;
+    background:#1a1a1a; color:#fff; border:none; border-radius:999px;
+    padding:8px 14px; font-size:11px; font-weight:600; cursor:pointer; margin-left:2px;
+  }
+  .print-btn:hover { background:#000; }
+</style>
+</head>
+<body>
+
+<!-- ================= THEME SWITCHER (hidden on print) ================= -->
+<div class="theme-switcher no-print">
+  <span class="theme-switcher-label">Tema</span>
+  <button class="theme-btn active" data-theme="deeptech" title="DeepTech Blue" aria-label="DeepTech Blue tema" onclick="setTheme('deeptech')"></button>
+  <button class="theme-btn" data-theme="luxury" title="Luxury Dark/Gold" aria-label="Luxury Gold tema" onclick="setTheme('luxury')"></button>
+  <button class="theme-btn" data-theme="emerald" title="Emerald Minimalist" aria-label="Emerald tema" onclick="setTheme('emerald')"></button>
+  <button class="theme-btn" data-theme="purple" title="Elegant Purple" aria-label="Purple tema" onclick="setTheme('purple')"></button>
+  <button class="print-btn" onclick="window.print()">🖨 Chop etish</button>
+</div>
+
+<main>
+
+  <!-- ================= PAGE 1 — HERO + PSIXOLOGIK PROFIL ================= -->
+  <div class="page">
+    <div class="hero">
+      <div class="confidential-badge">🔒 Maxfiy — Shaxsiy Hisobot</div>
+      <div class="hero-eyebrow">IT Karyera Diagnostikasi</div>
+      <h1>Karyera Yo'l Xaritasi</h1>
+      <div class="hero-subtitle">Premium Diagnostika Xulosasi</div>
+      <div class="hero-name-block">
+        <div class="hero-name-label">Tayyorlandi</div>
+        <div class="hero-name">[Ism Familiya]</div>
+        <div class="hero-meta">
+          <div class="hero-meta-item">Sana: <strong>[00.00.2026]</strong></div>
+          <div class="hero-meta-item">Hisobot №: <strong>[0000]</strong></div>
+          <div class="hero-meta-item">Tayyorladi: <strong>[Brend nomi]</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="section-header compact">
+        <div class="section-number-bg">01</div>
+        <div class="section-eyebrow">Bo'lim 01</div>
+        <h2 class="section-title">Psixologik Profil</h2>
+        <div class="section-title-bar"></div>
+      </div>
+
+      <div class="cards-grid-3">
+        <div class="profile-card">
+          <div class="profile-card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-4 3.1-6.4 7-6.4s7 2.4 7 6.4"/></svg>
+          </div>
+          <div class="profile-card-label">Arxetip</div>
+          <div class="profile-card-value">Lider</div>
+          <p class="profile-card-desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore.</p>
+        </div>
+
+        <div class="profile-card">
+          <div class="profile-card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="7" y2="7"/><line x1="17" y1="17" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="7" y2="17"/><line x1="17" y1="7" x2="19.1" y2="4.9"/></svg>
+          </div>
+          <div class="profile-card-label">Super Kuch</div>
+          <div class="profile-card-value">Strategik Fikrlash</div>
+          <p class="profile-card-desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam quis nostrud exercitation.</p>
+        </div>
+
+        <div class="profile-card">
+          <div class="profile-card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,17 9,11 13,15 21,6"/><polyline points="15,6 21,6 21,12"/></svg>
+          </div>
+          <div class="profile-card-label">O'sish Nuqtasi</div>
+          <div class="profile-card-value">Vaqtni Boshqarish</div>
+          <p class="profile-card-desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis aute irure dolor in reprehenderit voluptate.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Karyera Yo'l Xaritasi — Diagnostika Hisoboti</span>
+      <span>01 / 04</span>
+    </div>
+  </div>
+
+  <!-- ================= PAGE 2 — ENG MOS KASB ================= -->
+  <div class="page">
+    <div class="page-body">
+      <div class="section-header">
+        <div class="section-number-bg">02</div>
+        <div class="section-eyebrow">Bo'lim 02</div>
+        <h2 class="section-title">Eng Mos Kasb</h2>
+        <div class="section-title-bar"></div>
+      </div>
+
+      <div class="match-card">
+        <div class="match-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="3" y1="13" x2="21" y2="13"/></svg>
+          Top Karyera Mosligi — #1 Tavsiya
+        </div>
+        <h3 class="match-job-title">Full-Stack Dasturchi</h3>
+        <div class="match-job-subtitle">Sizning kuchli tomonlaringiz, qiziqishlaringiz va test natijalaringiz asosida aniqlandi.</div>
+
+        <div class="match-detail-row">
+          <div class="score-ring" style="--score:94;">
+            <div class="score-ring-inner">
+              <div class="score-ring-value">94%</div>
+              <div class="score-ring-label">Moslik</div>
+            </div>
+          </div>
+          <div class="why-box">
+            <h3>Nima uchun aynan shu kasb?</h3>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+          </div>
+        </div>
+
+        <div class="skills-block">
+          <div class="block-label">Asosiy Ko'nikmalar</div>
+          <div class="skills-wrap">
+            <span class="skill-chip">JavaScript</span>
+            <span class="skill-chip">React</span>
+            <span class="skill-chip">Node.js</span>
+            <span class="skill-chip">TypeScript</span>
+            <span class="skill-chip">SQL</span>
+            <span class="skill-chip">Git</span>
+            <span class="skill-chip">REST API</span>
+            <span class="skill-chip">Docker</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Karyera Yo'l Xaritasi — Diagnostika Hisoboti</span>
+      <span>02 / 04</span>
+    </div>
+  </div>
+
+  <!-- ================= PAGE 3 — 6 OYLIK RIVOJLANISH XARITASI ================= -->
+  <div class="page">
+    <div class="page-body">
+      <div class="section-header">
+        <div class="section-number-bg">03</div>
+        <div class="section-eyebrow">Bo'lim 03</div>
+        <h2 class="section-title">6 Oylik Rivojlanish Xaritasi</h2>
+        <div class="section-title-bar"></div>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-node">1</div>
+          <div class="timeline-content">
+            <span class="timeline-phase-tag">1–2 Oy</span>
+            <h3>Poydevor</h3>
+            <ul class="timeline-list">
+              <li>HTML, CSS va JavaScript asoslarini chuqur o'rganish</li>
+              <li>Git va GitHub bilan ishlashni boshlash</li>
+              <li>3–5 ta kichik amaliy loyiha ustida mashq qilish</li>
+            </ul>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-node">2</div>
+          <div class="timeline-content">
+            <span class="timeline-phase-tag">3–4 Oy</span>
+            <h3>Chuqurlashtirish</h3>
+            <ul class="timeline-list">
+              <li>React (yoki Vue) freymvorkini o'zlashtirish</li>
+              <li>Backend asoslari: Node.js va ma'lumotlar bazasi</li>
+              <li>API integratsiyasi bilan to'liq loyiha yaratish</li>
+            </ul>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-node">3</div>
+          <div class="timeline-content">
+            <span class="timeline-phase-tag">5–6 Oy</span>
+            <h3>Portfolio va Ish Qidiruv</h3>
+            <ul class="timeline-list">
+              <li>3 ta to'liq portfolio loyihasini yakunlash</li>
+              <li>LinkedIn va GitHub profilini optimallashtirish</li>
+              <li>Texnik intervyularga tayyorgarlik ko'rish</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Karyera Yo'l Xaritasi — Diagnostika Hisoboti</span>
+      <span>03 / 04</span>
+    </div>
+  </div>
+
+  <!-- ================= PAGE 4 — MOLIYAVIY PROGNOZ VA TAVSIYALAR ================= -->
+  <div class="page">
+    <div class="page-body">
+      <div class="section-header">
+        <div class="section-number-bg">04</div>
+        <div class="section-eyebrow">Bo'lim 04</div>
+        <h2 class="section-title">Moliyaviy Prognoz va Tavsiyalar</h2>
+        <div class="section-title-bar"></div>
+      </div>
+
+      <div class="finance-row">
+        <div class="finance-card">
+          <div class="finance-amount">$300–600</div>
+          <div class="finance-bar-track"><div class="finance-bar" style="height:32%"></div></div>
+          <div class="finance-level">Junior</div>
+        </div>
+        <div class="finance-card">
+          <div class="finance-amount">$800–1,500</div>
+          <div class="finance-bar-track"><div class="finance-bar" style="height:62%"></div></div>
+          <div class="finance-level">Middle</div>
+        </div>
+        <div class="finance-card">
+          <div class="finance-amount">$2,000–4,000+</div>
+          <div class="finance-bar-track"><div class="finance-bar" style="height:100%"></div></div>
+          <div class="finance-level">Senior</div>
+        </div>
+      </div>
+
+      <div class="tips-section">
+        <div class="block-label">Professional Maslahatlar</div>
+        <div class="tips-list">
+          <div class="tip-item">
+            <div class="tip-number">1</div>
+            <div class="tip-text"><strong>Har kuni kod yozing.</strong> Kamida 1 soat amaliyotga bag'ishlang — barqarorlik natijadan muhimroq.</div>
+          </div>
+          <div class="tip-item">
+            <div class="tip-number">2</div>
+            <div class="tip-text"><strong>Real loyihalar yarating.</strong> Portfolio nazariyadan ko'ra ko'proq gapiradi.</div>
+          </div>
+          <div class="tip-item">
+            <div class="tip-number">3</div>
+            <div class="tip-text"><strong>Hamjamiyatga qo'shiling.</strong> IT hamjamiyatlarida faol bo'ling va tarmoq (networking) quring.</div>
+          </div>
+          <div class="tip-item">
+            <div class="tip-number">4</div>
+            <div class="tip-text"><strong>O'rganishni to'xtatmang.</strong> Texnologiyalar tez o'zgaradi — moslashuvchan bo'ling.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="closing-cta">
+        <h3>Ushbu yo'l xaritasi sizning shaxsiy natijalaringiz asosida tuzildi</h3>
+        <p>[Brend nomi] jamoasi tomonidan tayyorlangan — [sayt.uz]</p>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Karyera Yo'l Xaritasi — Diagnostika Hisoboti</span>
+      <span>04 / 04</span>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.querySelectorAll('.theme-btn').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-theme') === theme);
+    });
+  }
+</script>
+</body>
+</html>
