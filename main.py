@@ -326,7 +326,7 @@ async def send_followup_message(chat_id: int, name: str, avatar: str):
     print(f"Follow-up xabari 12 soatdan so'ng yuborildi: {name}")
 
 # 🤖 WEBHOOK
-@app.post("/webhook")
+# @app.post("/webhook")
 @app.post("/webhook")
 async def telegram_webhook(request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     try: 
@@ -531,3 +531,28 @@ async def telegram_webhook(request: Request, background_tasks: BackgroundTasks, 
             print("Callback Xatosi:", e)
 
     return {"status": "ok"}
+
+@app.get("/roadmap/{report_id}", response_class=HTMLResponse)
+async def view_roadmap(request: Request, report_id: str):
+    report = premium_reports_db.get(report_id)
+    
+    if not report:
+        return HTMLResponse("<h1>Xatolik: Hisobot topilmadi yoki muddati o'tgan. Tizimdan qayta o'ting.</h1>")
+
+    ai_data = report["ai_data"]
+    
+    return templates.TemplateResponse("roadmap.html", {
+        "request": request,
+        "name": report["name"],
+        "archetype": ai_data.get("psychological_profile", {}).get("archetype", ""),
+        "super_power": ai_data.get("psychological_profile", {}).get("super_power", ""),
+        "growth_area": ai_data.get("psychological_profile", {}).get("growth_area", ""),
+        "top_job_title": ai_data.get("careers", {}).get("top_match", {}).get("title", ""),
+        "match_score": ai_data.get("careers", {}).get("top_match", {}).get("match_score", ""),
+        "why_this_job": ai_data.get("careers", {}).get("top_match", {}).get("why_this", ""),
+        "core_skills": ai_data.get("careers", {}).get("top_match", {}).get("core_skills", []),
+        "roadmap_phases": ai_data.get("roadmap", []),
+        "starting_income": ai_data.get("financial_forecast", {}).get("starting_income", ""),
+        "potential_1_year": ai_data.get("financial_forecast", {}).get("potential_1_year", ""),
+        "pro_tips": ai_data.get("pro_tips", [])
+    })
